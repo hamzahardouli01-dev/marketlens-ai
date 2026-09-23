@@ -1,10 +1,10 @@
-# Chrome Web Store Listing — MarketLens AI
+# Chrome Web Store Listing — MarketLens AI (Clean & Compliant Copy)
 
 ---
 
 ## 📌 1. Extension Name (Store Title)
 ```text
-MarketLens AI — Facebook Marketplace & eBay Deal Assistant
+MarketLens AI — Smart Buying Assistant
 ```
 
 ---
@@ -13,85 +13,72 @@ MarketLens AI — Facebook Marketplace & eBay Deal Assistant
 ```text
 AI deal appraisals & scam detection for marketplace listings. Inspects prices, detects flaws, and calculates flip profit.
 ```
-*(Exact length: 121 characters — passes the 132-char validation!)*
+*(Exact length: 121 characters)*
 
 ---
 
-## 📌 3. Full Description (Ready to Paste)
+## 📌 3. Full Description (100% Policy-Compliant — No Brand Stuffing)
 
 ```markdown
-Never get scammed or overpay on Facebook Marketplace, eBay, or Craigslist again. 
+Never get scammed or overpay on secondhand marketplace listings again.
 
-MarketLens AI is your instant Secondhand Deal Appraiser, Scam Detector & Resale Flip Advisor — powered by Google Gemini 3.8 Flash Vision with Real-Time Google Search Grounding.
+MarketLens AI is your intelligent buying assistant and deal appraiser, powered by Google Gemini Vision with real-time web search grounding.
 
-Whether you are hunting for budget electronics, shopping for a used car, or flipping secondhand items for profit, MarketLens AI automatically analyzes listing photos, prices, descriptions, and seller red flags in 1 click.
+Whether you are shopping for secondhand goods or looking for profitable items to flip, MarketLens AI inspects listing photos, prices, descriptions, and seller red flags in one click.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔥 KEY FEATURES AT A GLANCE
+✨ KEY FEATURES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🏷️ 1. 3-Way Price Reality Check (Real-Time Market Valuation)
-Is that deal actually cheap, or is the seller ripping you off?
-• Compares asking price vs. Original Brand New Retail MSRP.
-• Uses real-time web search grounding to determine fair used market value.
-• Instant Deal Badge: "🔥 Steal Deal (Underpriced)", "⚖️ Fair Price", or "⚠️ Overpriced Ripoff".
+🏷️ 1. 3-Way Price Reality Check
+Know immediately if a deal is genuinely underpriced or overpriced:
+• Compares asking price against original retail MSRP.
+• Uses real-time web search grounding to evaluate fair used market value.
+• Provides instant deal status badges: Steal Deal, Fair Market Price, or Overpriced.
 
-🛡️ 2. AI Scam & Red-Flag Detector
-Protect your hard-earned money from marketplace fraud:
-• Detects mismatched specifications (e.g. fake iPhone clones or wrong model colors).
-• Flags high-risk seller behavior, suspicious missing details, and bait-and-switch tactics.
-• Generates tailored inspection questions to ask the seller before meeting up in person.
+🛡️ 2. Scam & Red-Flag Detection
+Protect yourself from marketplace fraud before meeting a seller:
+• Detects inconsistent hardware specifications and counterfeit indicators.
+• Flags suspicious seller patterns, missing serial numbers, and bait-and-switch listings.
+• Generates tailored inspection questions to ask the seller before purchasing.
 
-📸 3. AI Photo Inspection & Hidden Flaw Audit (Gemini Vision)
-Sellers often hide cosmetic defects in the shadows or use stock pictures:
-• Authenticity Check: Detects if the listing uses real user-taken photos or fake manufacturer stock photos.
-• Visual Damage Scan: Identifies scratches, dents, cracked glass, and heavy wear.
-• Accessory Scanner: Confirms what cords, boxes, controllers, or manuals are actually present.
-• Condition Grade: Automatically grades items as Mint, Good, Fair, or Poor.
+📸 3. Photo Flaw & Authenticity Inspection
+Examines product images with advanced vision models:
+• Authenticity verification: Distinguishes real seller-taken photos from stock catalog images.
+• Flaw detection: Spots scratches, dents, cracked screens, and heavy cosmetic wear.
+• Accessory verification: Identifies included cables, controllers, or original packaging.
+• Condition grading: Assigns an objective condition score (Mint, Good, Fair, or Poor).
 
 📈 4. Secondhand Resale & Flip Profit Calculator
-Turn secondhand marketplaces into your personal side hustle:
-• Flip Potential Score (1 to 10): Instant rating on how fast this item will resell.
-• Estimated Net Resale Profit: See your exact dollar profit after purchase.
-• Resale Timeframe: Tells you if it's a Fast Flip (1–3 days), Moderate (1–2 weeks), or Slow Moving.
+Evaluate items for resale potential:
+• Flip potential score: Evaluates market liquidity and demand.
+• Projected net profit: Estimates your dollar margin after purchase.
+• Resale timeframe: Indicates expected turnover speed (Fast Flip, Moderate, or Slow).
 
-💬 5. 1-Click Smart Counter-Offer Negotiator
-Hate awkward bargaining?
-• Calculates a scientifically sound, fair cash offer.
-• Writes a polite, high-conversion negotiation message ready to paste directly into Facebook Messenger or eBay chat.
-• One-click "Copy to Clipboard" button saves you time and secures lower prices.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🛒 WHERE DOES MARKETLENS WORK?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Works seamlessly across all major secondhand and marketplace websites:
-• Facebook Marketplace (FB Marketplace)
-• eBay (eBay.com, eBay Motors, eBay International)
-• Craigslist & OfferUp
-• Any shopping listing or classifieds page!
-
-Analyzes any product category:
-📱 Electronics & Tech: iPhones, Samsung Galaxy, MacBooks, Gaming PCs, GPUs, iPads.
-🎮 Gaming: PlayStation 5 (PS5), Xbox Series X, Nintendo Switch, Retro Games.
-🚗 Vehicles & Motors: Used cars, trucks, motorcycles, scooters, e-bikes.
-⌚ Luxury & Collectibles: Watches, sneakers, designer bags, trading cards.
-🛋️ Home & Living: Furniture, power tools, musical instruments, audio gear.
+💬 5. Smart Negotiation Assistant
+Take the stress out of making an offer:
+• Recommends a fair, data-backed cash offer.
+• Generates a polite, ready-to-send counter-offer message.
+• One-click copy to clipboard makes messaging sellers quick and effortless.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ ZERO SETUP — START IN 5 SECONDS
+🛒 SUPPORTED CATEGORIES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-• Instant Start: Install the extension and get your deal appraisal right away. No API keys or complicated setup needed!
-• MarketLens Pro: Upgrade for unlimited appraisals, priority AI analysis, and unlimited resale flipping profit audits.
-• Privacy First: We never sell your personal data or track your browsing history. Payments are processed securely with Stripe.
+MarketLens AI assists you across major secondhand marketplace websites and popular categories:
+• Consumer Electronics & Computers
+• Gaming Consoles & Accessories
+• Vehicles, Bicycles & Automotive Parts
+• Watches, Jewelry & Collectibles
+• Home Furniture, Power Tools & Musical Instruments
 
-Stop guessing. Stop overpaying. Start spotting hidden gems today with MarketLens AI!
-```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ ZERO SETUP REQUIRED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
----
+• Instant start: Install the extension and begin appraising deals immediately. No API keys or technical setup required.
+• MarketLens Pro: Optional upgrade for power users seeking unlimited appraisals and deep market intelligence.
+• Privacy focused: We respect your privacy. No personal browsing history is tracked or sold.
 
-## 📌 4. Search Keywords / Tags (For Search Optimization)
-```text
-facebook marketplace, ebay assistant, price checker, scam detector, deal finder, flip profit calculator, used car price, iphone price check, gemini ai, buy or pass, second hand, bargain finder, side hustle flipping
+Make smarter buying decisions and uncover the best marketplace deals with MarketLens AI.
 ```
