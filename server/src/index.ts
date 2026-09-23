@@ -74,6 +74,73 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
+// ─── Hosted Privacy Policy for Chrome Web Store ───
+app.get('/privacy', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — MarketLens AI</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #f8fafc; }
+    .card { background: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); }
+    h1 { color: #0f172a; margin-top: 0; font-size: 28px; }
+    h2 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 28px; font-size: 20px; }
+    h3 { color: #334155; margin-top: 20px; font-size: 16px; }
+    p, li { color: #475569; font-size: 15px; }
+    ul { padding-left: 20px; }
+    .badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+    footer { margin-top: 32px; font-size: 13px; color: #94a3b8; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Official Compliance Document</div>
+    <h1>Privacy Policy for MarketLens AI</h1>
+    <p><strong>Last Updated:</strong> September 2026</p>
+    <p>MarketLens AI ("we", "our", or "the Extension") respects your privacy. This Privacy Policy describes how MarketLens AI handles information when you use our browser extension and backend services.</p>
+
+    <h2>1. Information We Collect</h2>
+    <h3>A. Listing Data for Deal Appraisals</h3>
+    <p>When you click <strong>"AI Deal Appraisal"</strong> on a marketplace listing (such as Facebook Marketplace, eBay, or Craigslist), MarketLens AI extracts:</p>
+    <ul>
+      <li>Public listing title</li>
+      <li>Asking price and currency</li>
+      <li>Seller's public item description</li>
+      <li>Public listing photos</li>
+    </ul>
+    <p>This information is processed solely for the purpose of generating the AI appraisal, condition inspection, and price comparison requested by you.</p>
+
+    <h3>B. Anonymous Usage & Quota Identifier</h3>
+    <p>We assign an anonymous random UUID (e.g., <code>usr_xxxx</code>) stored locally in your browser (via <code>chrome.storage</code>) to count free appraisals and link your MarketLens Pro subscription. We do <strong>not</strong> collect your name, physical address, browsing history, or personal identity unless you voluntarily provide an email during Stripe Checkout.</p>
+
+    <h3>C. Payment & Billing Information</h3>
+    <p>Subscription payments are processed directly by <strong>Stripe</strong>. We do <strong>not</strong> store or have access to your credit card numbers or banking credentials. Stripe handles all financial data under <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a>.</p>
+
+    <h2>2. What We Do NOT Collect</h2>
+    <ul>
+      <li>We do <strong>NOT</strong> track or record your general web browsing history.</li>
+      <li>We do <strong>NOT</strong> inspect, read, or access your social media feed, private messages, personal profile, friends list, or unrelated web pages.</li>
+      <li>We do <strong>NOT</strong> sell, rent, or monetize your personal information or data to third-party data brokers or advertisers.</li>
+    </ul>
+
+    <h2>3. How Information is Used</h2>
+    <p>The extracted listing context is sent securely (via HTTPS) to our backend service to query Google Gemini Vision models (with real-time Google Search grounding) to produce your deal appraisal. The data is only used to generate the requested analysis.</p>
+
+    <h2>4. Data Security</h2>
+    <p>All communication between the Chrome extension and our backend server is encrypted using industry-standard Transport Layer Security (TLS/HTTPS).</p>
+
+    <h2>5. Contact & Support</h2>
+    <p>If you have any questions or feedback regarding this Privacy Policy, please contact:</p>
+    <p><strong>Email:</strong> support@marketlens.ai</p>
+  </div>
+  <footer>&copy; 2026 MarketLens AI. All rights reserved.</footer>
+</body>
+</html>`);
+});
+
 // ─── User Status & Quota ───
 app.get('/api/user/status', async (req: Request, res: Response) => {
   const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string);
