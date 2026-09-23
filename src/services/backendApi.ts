@@ -11,8 +11,8 @@ import {
   saveUserSubscription,
 } from './subscription';
 
-// Default backend API URL (local dev fallback, easily configurable)
-export const DEFAULT_BACKEND_URL = 'http://localhost:3001';
+// Default backend API URL (Live Render cloud deployment)
+export const DEFAULT_BACKEND_URL = 'https://marketlens-backend-nqg2.onrender.com';
 const STORAGE_KEY_BACKEND_URL = 'marketlens_backend_url';
 
 export async function getBackendUrl(): Promise<string> {
