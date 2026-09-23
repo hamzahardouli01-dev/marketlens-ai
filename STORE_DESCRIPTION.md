@@ -4,7 +4,7 @@
 
 ## Short Description (132 chars max)
 
-AI deal appraisal with Gemini Vision. Compares retail MSRP vs used market price, inspects photos for flaws & scores resale flip profit.
+AI deal appraisals & scam detection for marketplace listings. Inspects prices, detects flaws, and calculates flip profit.
 
 ---
 
