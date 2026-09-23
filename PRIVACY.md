@@ -1,80 +1,47 @@
-# Privacy Policy — CarListing Lens
+# Privacy Policy for MarketLens AI
 
-**Last updated: September 2026**
+**Last Updated:** September 2026
 
----
-
-## Summary
-
-CarListing Lens is a browser extension that helps you analyze, save, and compare used-car listings. It operates **entirely locally** — no data is ever sent to any server, no account is required, and no third-party services are used.
+MarketLens AI ("we", "our", or "the Extension") respects your privacy. This Privacy Policy describes how MarketLens AI handles information when you use our browser extension and backend services.
 
 ---
 
-## Data Collected and How It Is Used
+## 1. Information We Collect
 
-| What | Where stored | Purpose |
-|------|-------------|---------|
-| Extracted listing data (title, price, mileage, description, etc.) | `chrome.storage.local` on your device | Allows you to save, view, and compare listings |
-| Your personal notes and status labels | `chrome.storage.local` on your device | Persists your notes between browser sessions |
-| Price snapshots with timestamps | `chrome.storage.local` on your device | Shows price history for listings you have saved |
+### A. Listing Data for Appraisals
+When you click **"AI Deal Appraisal"** on a marketplace listing (Facebook Marketplace, eBay, Craigslist), MarketLens AI extracts:
+- Public listing title
+- Asking price & currency
+- Seller's public item description
+- Public listing photos
 
-**No data is transmitted off your device.** There is no server, no cloud sync, no analytics, no telemetry, and no account registration.
+This information is processed solely for the purpose of generating the AI appraisal, condition inspection, and price comparison requested by you.
 
----
+### B. Anonymous Usage & Quota Identifier
+We assign an anonymous random UUID (e.g., `usr_xxxx`) stored locally in your browser (`chrome.storage.sync` or `chrome.storage.local`) to count free appraisals and link your MarketLens Pro subscription. We do **not** collect your name, physical address, browsing history, or personal identity unless you provide an email during Stripe Checkout.
 
-## Permissions Used
-
-| Permission | Why it is needed |
-|-----------|----------------|
-| `activeTab` | Allows the extension to read the content of the tab you are actively viewing, only when you click the extension icon |
-| `scripting` | Required by Chrome MV3 to inject the content script into the active tab on demand |
-| `storage` | Allows saving listing data to `chrome.storage.local` on your device |
-
-The extension does **not** use:
-- Broad host permissions (`<all_urls>` beyond web-accessible resources)
-- `tabs` or `history` permissions
-- Network access to any external URL
-- `identity` or `cookies` permissions
+### C. Payment & Billing Information
+Subscription payments are processed directly by **Stripe**. We do **not** store or have access to your credit card numbers or banking credentials. Stripe handles all financial data under [Stripe's Privacy Policy](https://stripe.com/privacy).
 
 ---
 
-## How Extraction Works
-
-When you click "Analyze this listing," the extension reads the visible page content of the Facebook Marketplace listing you are viewing. It extracts structured information (price, mileage, description, etc.) from the DOM.
-
-- **Extraction only happens after your explicit action** (clicking the Analyze button).
-- **No background crawling or monitoring** occurs.
-- Extraction is limited to the listing page you are viewing; the extension does not read suggested listings, your Facebook feed, messages, or any other pages.
+## 2. What We Do NOT Collect
+- We do **NOT** track or record your general web browsing history.
+- We do **NOT** inspect, read, or access your social media feed, private messages, personal profile, friends list, or unrelated web pages.
+- We do **NOT** sell, rent, or monetize your personal information or data to third-party data brokers or advertisers.
 
 ---
 
-## Listing Text as Untrusted Input
-
-Seller-provided descriptions are treated as untrusted text. They are stored as plain strings and rendered safely by React (which escapes HTML by default), preventing cross-site scripting (XSS) attacks.
-
----
-
-## Data Deletion
-
-You can delete your data at any time:
-- **Delete one listing**: Click "🗑" on any saved listing card.
-- **Delete all data**: Use the "Delete all" button at the bottom of the Saved Vehicles page.
-- **Browser-level deletion**: Go to `chrome://extensions` → CarListing Lens → "Remove extension" to delete all stored data along with the extension.
+## 3. How Information is Used
+The extracted listing context is sent securely (via HTTPS) to our backend service to query Google Gemini Vision models (with real-time Google Search grounding) to produce your deal appraisal. The data is only used to generate the requested analysis.
 
 ---
 
-## Children's Privacy
-
-This extension is not directed at children. No personal information of any kind is collected.
-
----
-
-## Changes to This Policy
-
-If the extension's data practices change in a future version, this document will be updated and the version number will be incremented.
+## 4. Data Security
+All communication between the Chrome extension and our backend server is encrypted using industry-standard Transport Layer Security (TLS/HTTPS).
 
 ---
 
-## Contact
-
-This is an open-source / personal project. For questions, open an issue in the project repository.
+## 5. Contact & Support
+If you have any questions or feedback regarding this Privacy Policy, please contact:
+- **Email:** support@marketlens.ai
