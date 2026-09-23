@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MarketLens AI — Smart Buying Assistant",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI deal appraisals & scam detection for marketplace listings. Inspects prices, detects flaws, and calculates flip profit.",
   "icons": {
     "16": "icons/icon16.png",
@@ -48,11 +48,16 @@
   ],
   "host_permissions": [
     "https://marketlens-backend-nqg2.onrender.com/*",
-    "http://localhost:3001/*",
-    "http://127.0.0.1:3001/*",
     "https://generativelanguage.googleapis.com/*",
-    "http://*/*",
-    "https://*/*"
+    "https://*.facebook.com/*",
+    "https://*.fbcdn.net/*",
+    "https://*.ebay.com/*",
+    "https://*.ebay.ca/*",
+    "https://*.ebayimg.com/*",
+    "https://*.craigslist.org/*",
+    "https://*.offerup.com/*",
+    "https://*.mercari.com/*",
+    "https://*.poshmark.com/*"
   ],
   "web_accessible_resources": [
     {
