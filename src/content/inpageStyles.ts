@@ -44,6 +44,11 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
     .ml-card-badge:hover { background: var(--ml-accent); border-color: transparent; }
     .ml-card-badge:active { transform: scale(0.97); }
     .ml-card-badge .ml-i { width: 13px; height: 13px; flex: none; }
+    .ml-card-badge.has-score { padding: 0 10px 0 9px; font-variant-numeric: tabular-nums; font-size: 12px; }
+    .ml-card-badge .ml-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: #9aa1ad; flex: none; }
+    .ml-card-badge[data-tone="positive"] .ml-badge-dot { background: #3DD68C; }
+    .ml-card-badge[data-tone="warning"] .ml-badge-dot { background: #F5B544; }
+    .ml-card-badge[data-tone="danger"] .ml-badge-dot { background: #F47174; }
 
     #${BTN_ID} {
       position: fixed;
@@ -272,6 +277,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       scrollbar-width: thin;
       scrollbar-color: var(--ml-border-strong) transparent;
     }
+    ${M} .ml-drawer-body > * { flex-shrink: 0; }
     ${M} .ml-drawer-body::-webkit-scrollbar { width: 8px; }
     ${M} .ml-drawer-body::-webkit-scrollbar-thumb { background: var(--ml-border-strong); border-radius: 8px; border: 2px solid var(--ml-bg); }
 
@@ -672,12 +678,55 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       color: var(--ml-bg);
       font-size: 12px;
       font-weight: 600;
+      white-space: nowrap;
       opacity: 0;
       pointer-events: none;
+      z-index: 2;
       box-shadow: 0 6px 20px rgba(0,0,0,0.2);
     }
     ${M} .ml-toast .ml-i { width: 14px; height: 14px; }
     ${M} .ml-toast.show { animation: ml-toast 1.8s ease both; }
+
+    /* ── Results toolbar ── */
+    ${M} .ml-toolbar { display: flex; align-items: center; gap: 6px; }
+    ${M} .ml-toolbar-meta { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ml-text-3); white-space: nowrap; }
+    ${M} .ml-toolbar-meta .ml-i { width: 13px; height: 13px; }
+    ${M} .ml-icon-btn.is-sm { width: 28px; height: 28px; }
+    ${M} .ml-btn-secondary.is-active { color: var(--ml-accent-text); border-color: color-mix(in srgb, var(--ml-accent) 45%, transparent); background: var(--ml-accent-tint); }
+    ${M} #ml-price-change-slot:empty { display: none; }
+
+    /* ── Counter-offer builder ── */
+    ${M} .ml-offer-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    ${M} .ml-stepper { display: inline-flex; align-items: center; border: 1px solid var(--ml-border-strong); border-radius: var(--ml-r-md); overflow: hidden; background: var(--ml-surface); }
+    ${M} .ml-stepper-btn { width: 32px; height: 34px; display: grid; place-items: center; color: var(--ml-text-2); transition: background 0.15s ease, color 0.15s ease; }
+    ${M} .ml-stepper-btn:hover { background: var(--ml-surface-2); color: var(--ml-text); }
+    ${M} .ml-stepper-value { min-width: 76px; text-align: center; font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ml-text); border-left: 1px solid var(--ml-border); border-right: 1px solid var(--ml-border); line-height: 34px; padding: 0 8px; }
+    ${M} .ml-offer-delta { font-size: 12px; color: var(--ml-positive); font-weight: 550; }
+    ${M} .ml-offer-delta.is-over { color: var(--ml-warning); }
+    ${M} .ml-tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+    ${M} .ml-tab { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 550; color: var(--ml-text-2); border: 1px solid var(--ml-border); background: var(--ml-surface); transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+    ${M} .ml-tab:hover:not(:disabled) { color: var(--ml-text); border-color: var(--ml-border-strong); }
+    ${M} .ml-tab.active, ${M} .ml-tab.active:hover { background: var(--ml-text); border-color: var(--ml-text); color: var(--ml-bg); }
+    ${M} .ml-tab:disabled { opacity: 0.45; }
+
+    /* ── Keyboard hints ── */
+    ${M} .ml-kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 5px;
+      border: 1px solid var(--ml-border-strong);
+      border-bottom-width: 2px;
+      background: var(--ml-surface);
+      color: var(--ml-text-2);
+      font: 600 11px/1 var(--ml-font);
+    }
+    ${M} .ml-kbd-group { display: inline-flex; gap: 4px; flex: none; }
+    ${M} .ml-tip { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; }
+    ${M} .ml-tip > span { display: inline-flex; align-items: center; gap: 3px; flex-wrap: wrap; justify-content: center; }
 
     /* ── Small screens ── */
     @media (max-width: 480px) {

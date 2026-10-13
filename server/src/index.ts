@@ -99,12 +99,12 @@ app.get('/privacy', (_req: Request, res: Response) => {
   <div class="card">
     <div class="badge">Official Compliance Document</div>
     <h1>Privacy Policy for MarketLens AI</h1>
-    <p><strong>Last Updated:</strong> September 2026</p>
+    <p><strong>Last Updated:</strong> October 2026</p>
     <p>MarketLens AI ("we", "our", or "the Extension") respects your privacy. This Privacy Policy describes how MarketLens AI handles information when you use our browser extension and backend services.</p>
 
     <h2>1. Information We Collect</h2>
     <h3>A. Listing Data for Deal Appraisals</h3>
-    <p>When you click <strong>"AI Deal Appraisal"</strong> on a marketplace listing (such as Facebook Marketplace, eBay, or Craigslist), MarketLens AI extracts:</p>
+    <p>When you click <strong>"Analyze deal"</strong> on a marketplace listing (such as Facebook Marketplace, eBay, or Craigslist), MarketLens AI extracts:</p>
     <ul>
       <li>Public listing title</li>
       <li>Asking price and currency</li>
@@ -118,6 +118,14 @@ app.get('/privacy', (_req: Request, res: Response) => {
 
     <h3>C. Payment & Billing Information</h3>
     <p>Subscription payments are processed directly by <strong>Stripe</strong>. We do <strong>not</strong> store or have access to your credit card numbers or banking credentials. Stripe handles all financial data under <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a>.</p>
+
+    <h3>D. Data Stored Only on Your Device</h3>
+    <p>To make saved listings, price-drop alerts and instant re-opening of past analyses work, MarketLens AI keeps the following in your browser's local extension storage (<code>chrome.storage.local</code>):</p>
+    <ul>
+      <li>Listings you choose to save, with their analysis, the prices observed when you revisit them, and any status or notes you add</li>
+      <li>Your most recent analyses (up to 60), without listing photos</li>
+    </ul>
+    <p>This data never leaves your device and is not sent to our servers. You can delete it at any time from <strong>Settings → Analysis history → Clear</strong> in the drawer, or <strong>Delete all</strong> on the Saved listings page. Uninstalling the extension also removes it.</p>
 
     <h2>2. What We Do NOT Collect</h2>
     <ul>

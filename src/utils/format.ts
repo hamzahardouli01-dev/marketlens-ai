@@ -73,3 +73,19 @@ export function buildPriceScale(input: PriceScaleInput): PriceScale {
     msrp: pos(msrp),
   };
 }
+
+/** Short relative time, e.g. "just now", "5 min ago", "3 days ago". */
+export function timeAgo(timestamp: number, now: number = Date.now()): string {
+  const seconds = Math.max(0, Math.round((now - timestamp) / 1000));
+  if (seconds < 45) return 'just now';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+  const years = Math.round(months / 12);
+  return `${years} ${years === 1 ? 'year' : 'years'} ago`;
+}

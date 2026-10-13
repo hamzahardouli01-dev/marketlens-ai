@@ -18,6 +18,15 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+M",
+        "mac": "Alt+Shift+M"
+      },
+      "description": "Open the MarketLens drawer"
+    }
+  },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true

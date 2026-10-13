@@ -181,6 +181,24 @@
 
 .saved-card-actions .push-right { margin-left: auto; }
 
+.saved-card-actions.wl-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+}
+
+.wl-actions .wl-status-select { width: 100%; min-width: 0; }
+
+.wl-head-actions {
+  display: flex;
+  gap: 2px;
+  margin: -4px -6px 0 0;
+  flex: none;
+}
+
+.wl-head-actions .btn { width: 30px; padding: 0; color: var(--text-muted); }
+.wl-head-actions .btn:hover { color: var(--text-primary); }
+
 .price-history-row {
   display: flex;
   align-items: center;
@@ -417,4 +435,211 @@
 .danger-zone p {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* ── Watchlist cards ── */
+.wl-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.wl-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex: none;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.wl-thumb-empty {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+.wl-thumb-empty svg { width: 22px; height: 22px; }
+
+.wl-head-text { min-width: 0; flex: 1; }
+
+.wl-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-primary);
+  text-decoration: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wl-title:hover { text-decoration: underline; }
+
+.wl-sub {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.wl-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wl-spacer { flex: 1; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pill svg { width: 12px; height: 12px; }
+
+.pill.has-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pill.tone-positive { background: var(--green-soft); color: var(--green); }
+.pill.tone-warning { background: var(--yellow-soft); color: var(--yellow); }
+.pill.tone-danger { background: var(--red-soft); color: var(--red); }
+.pill.tone-accent { background: var(--accent-soft); color: var(--accent-text); }
+
+.wl-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.wl-facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+}
+
+.wl-facts span { font-size: 11px; color: var(--text-muted); }
+.wl-facts strong { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.wl-status-select,
+.wl-sort {
+  width: auto;
+  height: 30px;
+  padding: 0 28px 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.wl-sort { height: 34px; font-weight: 500; font-size: 13px; }
+
+/* ── Status filter chips ── */
+.wl-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: -4px 0 18px;
+}
+
+.wl-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.wl-filter:hover:not(:disabled) { color: var(--text-primary); border-color: var(--border); }
+.wl-filter.active,
+.wl-filter.active:hover:not(:disabled) { background: var(--text-primary); border-color: var(--text-primary); color: var(--bg); }
+.wl-filter:disabled { opacity: 0.45; cursor: default; }
+
+.wl-filter-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* ── Compare extras ── */
+.compare-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.compare-head .wl-thumb { width: 44px; height: 44px; }
+
+.compare-head-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.compare-inline,
+.compare-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.compare-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+.compare-list li { position: relative; padding-left: 12px; }
+
+.compare-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--blue);
+}
+
+.compare-list li.sev-warning::before { background: var(--yellow); }
+.compare-list li.sev-critical::before { background: var(--red); }
+
+@media (max-width: 640px) {
+  .options-layout { padding: 0 16px 40px; }
+  .search-input { width: 100%; }
+  .saved-grid { grid-template-columns: 1fr; }
 }

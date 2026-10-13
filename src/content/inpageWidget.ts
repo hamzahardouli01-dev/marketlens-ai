@@ -12,6 +12,8 @@
 import {
   harvestUniversalListing,
   convertImageToBase64,
+  extractUniversalPrice,
+  getListingRoot,
   isIndividualListing,
   isMarketplacePage,
   waitForListingElements,
@@ -41,7 +43,29 @@ import {
 } from '../services/settings';
 import { buildInpageStyles } from './inpageStyles';
 import { icon, type IconName } from './icons';
-import { buildPriceScale, esc, money } from '../utils/format';
+import { buildPriceScale, esc, money, timeAgo } from '../utils/format';
+import { listingKey } from '../utils/listing';
+import { OFFER_TONES, buildDealSummary, buildOfferMessage, offerStep, shortItemName, type OfferTone } from '../utils/dealText';
+import {
+  ANALYSIS_CACHE_KEY,
+  buildAnalysisIndex,
+  clearAnalysisHistory,
+  countCachedAnalyses,
+  getAnalysisIndex,
+  getCachedAnalysis,
+  saveCachedAnalysis,
+  type AnalysisIndexEntry,
+} from '../storage/analysisCache';
+import {
+  attachAnalysis,
+  getWatchItem,
+  getWatchlist,
+  priceChangeSinceSaved,
+  recordObservedPrice,
+  removeFromWatchlist,
+  saveToWatchlist,
+  type PriceChange,
+} from '../storage/watchlist';
 
 const BTN_ID = 'marketlens-inpage-btn';
 const MODAL_ID = 'marketlens-inpage-modal';
@@ -51,7 +75,16 @@ let currentUserSub: UserSubscription | null = null;
 let currentSelectedPlan: ProPlan = 'annual';
 let isAutoAnalyzing = false;
 let activeDrawerTab: 'appraisal' | 'settings' = 'appraisal';
-let latestAnalysis: { analysis: AIProductAnalysis; context: UniversalListingContext; isDemo: boolean } | null = null;
+let latestAnalysis: {
+  analysis: AIProductAnalysis;
+  context: UniversalListingContext;
+  isDemo: boolean;
+  analyzedAt?: number;
+} | null = null;
+/** Runs a fresh (uncached) analysis of whatever the drawer is currently showing. */
+let reanalyzeAction: (() => void) | null = null;
+/** Buy score per listing key from the analysis history, for feed badges. */
+let analysisIndex: Record<string, AnalysisIndexEntry> = {};
 /** Re-runs whatever produced the current error screen (listing page or feed card). */
 let retryLastAction: (() => void) | null = null;
 
@@ -103,6 +136,14 @@ export function initInpageWidget(): void {
   // Check if returning from Stripe Checkout
   checkStripeRedirectReturn();
 
+  // Load analysis history so feed badges can show known scores
+  getAnalysisIndex()
+    .then((index) => {
+      analysisIndex = index;
+      refreshCardBadges();
+    })
+    .catch(() => {});
+
   // Load preferences
   getPreferences().then((prefs) => {
     currentPrefs = prefs;
@@ -120,6 +161,10 @@ export function initInpageWidget(): void {
           applyTheme();
           checkAndInject();
         }
+      }
+      if (area === 'local' && changes[ANALYSIS_CACHE_KEY]) {
+        analysisIndex = buildAnalysisIndex(changes[ANALYSIS_CACHE_KEY].newValue);
+        refreshCardBadges();
       }
     });
   }
@@ -376,8 +421,8 @@ function injectGridCardBadges(): void {
 
     const badge = document.createElement('button');
     badge.className = 'ml-card-badge';
-    badge.innerHTML = `${icon('sparkles', 13)}<span>Analyze</span>`;
-    badge.title = 'Analyze this listing with MarketLens AI';
+    badge.dataset.mlKey = listingKey(card.href);
+    renderCardBadge(badge);
 
     badge.addEventListener('click', (e) => {
       e.preventDefault();
@@ -402,6 +447,25 @@ function injectGridCardBadges(): void {
 
     card.appendChild(badge);
   }
+}
+
+function renderCardBadge(badge: HTMLElement): void {
+  const entry = analysisIndex[badge.dataset.mlKey || ''];
+  if (entry && entry.score !== null) {
+    badge.classList.add('has-score');
+    badge.dataset.tone = scoreTone(entry.score);
+    badge.innerHTML = `<span class="ml-badge-dot"></span><span>${entry.score}</span>`;
+    badge.title = `MarketLens buy score ${entry.score}/100 — click to view`;
+  } else {
+    badge.classList.remove('has-score');
+    delete badge.dataset.tone;
+    badge.innerHTML = `${icon('sparkles', 13)}<span>Analyze</span>`;
+    badge.title = 'Analyze this listing with MarketLens AI';
+  }
+}
+
+function refreshCardBadges(): void {
+  document.querySelectorAll<HTMLElement>('.ml-card-badge').forEach(renderCardBadge);
 }
 
 // ─── 3. In-Feed Card Context Harvester ────────────────────────────────────────
@@ -488,11 +552,60 @@ async function harvestCardContext(card: HTMLAnchorElement): Promise<UniversalLis
   };
 }
 
-async function openInpageModalForCard(card: HTMLAnchorElement): Promise<void> {
-  retryLastAction = () => openInpageModalForCard(card);
-  createModalBase();
+async function runCardAnalysis(card: HTMLAnchorElement): Promise<void> {
+  retryLastAction = () => runCardAnalysis(card);
+  createModalBase(true);
   try {
     const context = await harvestCardContext(card);
+    await executeAppraisal(context);
+  } catch (err: any) {
+    showModalError(err?.message || String(err));
+  }
+}
+
+async function openInpageModalForCard(card: HTMLAnchorElement): Promise<void> {
+  activeDrawerTab = 'appraisal';
+  reanalyzeAction = () => runCardAnalysis(card);
+  if (await showCachedAnalysis(card.href)) return;
+  await runCardAnalysis(card);
+}
+
+/** Show a previously stored analysis for this listing, if there is one. */
+async function showCachedAnalysis(url: string): Promise<boolean> {
+  const key = listingKey(url);
+  if (!key) return false;
+
+  if (latestAnalysis && !latestAnalysis.isDemo && listingKey(latestAnalysis.context.url) === key) {
+    createModalBase(false);
+    showLatestAnalysis();
+    return true;
+  }
+
+  const cached = await getCachedAnalysis(url).catch(() => null);
+  if (!cached) return false;
+
+  latestAnalysis = {
+    analysis: cached.analysis,
+    context: { ...cached.context, url, description: '' },
+    isDemo: false,
+    analyzedAt: cached.analyzedAt,
+  };
+  createModalBase(false);
+  showLatestAnalysis();
+  return true;
+}
+
+function showLatestAnalysis(): void {
+  if (!latestAnalysis) return;
+  renderInpageResults(latestAnalysis.analysis, latestAnalysis.context, latestAnalysis.isDemo, latestAnalysis.analyzedAt);
+}
+
+async function runListingAnalysis(): Promise<void> {
+  retryLastAction = () => runListingAnalysis();
+  createModalBase(true);
+  try {
+    await waitForListingElements(document, 1500);
+    const context: UniversalListingContext = await harvestUniversalListing();
     await executeAppraisal(context);
   } catch (err: any) {
     showModalError(err?.message || String(err));
@@ -520,23 +633,51 @@ export async function openInpageModal(): Promise<void> {
     return;
   }
 
-  // 2. If we already appraised this exact listing page, show results immediately without re-fetching
-  if (latestAnalysis && latestAnalysis.context.url === window.location.href) {
-    createModalBase(false);
-    renderInpageResults(latestAnalysis.analysis, latestAnalysis.context, latestAnalysis.isDemo);
-    return;
-  }
+  // 2. If this listing was analyzed before (this session or earlier), show it instantly
+  reanalyzeAction = () => runListingAnalysis();
+  if (await showCachedAnalysis(window.location.href)) return;
 
-  // 3. We ARE on an individual listing: show the loading state and execute appraisal
-  retryLastAction = () => openInpageModal();
-  createModalBase(true);
+  // 3. Otherwise run a fresh analysis
+  await runListingAnalysis();
+}
+
+// ─── Watchlist price tracking ─────────────────────────────────────────────────
+
+/** Current price on the page, but only when the page is the listing being shown. */
+function readLivePrice(shownUrl: string): string {
+  if (!isDetailPage() || listingKey(shownUrl) !== listingKey(window.location.href)) return '';
   try {
-    await waitForListingElements(document, 1500);
-    const context: UniversalListingContext = await harvestUniversalListing();
-    await executeAppraisal(context);
-  } catch (err: any) {
-    showModalError(err?.message || String(err));
+    return extractUniversalPrice(getListingRoot(document), document).priceRaw;
+  } catch {
+    return '';
   }
+}
+
+/** On a saved listing's page, record today's price and surface any change since saving. */
+async function checkWatchedPrice(shownUrl: string): Promise<void> {
+  const url = window.location.href;
+  // Only read the page price when the drawer is showing this page's listing
+  if (!isDetailPage() || listingKey(shownUrl) !== listingKey(url)) return;
+  const item = await getWatchItem(url).catch(() => null);
+  if (!item) return;
+
+  const priceRaw = readLivePrice(shownUrl);
+
+  const result = priceRaw ? await recordObservedPrice(url, priceRaw).catch(() => null) : null;
+  const change = result ? result.change : priceChangeSinceSaved(item);
+  if (change) showPriceChangeNotice(change);
+}
+
+function showPriceChangeNotice(change: PriceChange): void {
+  const slot = document.getElementById('ml-price-change-slot');
+  if (!slot) return;
+  const dropped = change.delta < 0;
+  slot.innerHTML = `
+    <div class="ml-notice tone-${dropped ? 'positive' : 'warning'}">
+      ${icon(dropped ? 'trendingDown' : 'trendingUp')}
+      <div><strong>Price ${dropped ? 'dropped' : 'went up'} ${esc(money(Math.abs(change.delta)))}</strong> since you saved it — was ${esc(money(change.from))}, now ${esc(money(change.to))}.</div>
+    </div>
+  `;
 }
 
 function renderNoListingGuide(): void {
@@ -586,6 +727,7 @@ function renderNoListingGuide(): void {
         <button class="ml-btn ml-btn-secondary is-block" id="ml-preview-demo-trigger">View a sample analysis</button>
       </div>
       <p class="ml-supported">Works on Facebook Marketplace, eBay and Craigslist</p>
+      <p class="ml-supported ml-tip">${icon('keyboard', 14)}<span>Tip: press <kbd class="ml-kbd">Alt</kbd> <kbd class="ml-kbd">Shift</kbd> <kbd class="ml-kbd">M</kbd> to open MarketLens</span></p>
     </div>
   `;
 
@@ -666,6 +808,7 @@ function createModalBase(showLoading: boolean = true): void {
           </div>
           <div class="ml-header-actions">
             <button class="ml-plan-pill" id="ml-header-pro-pill"></button>
+            <button class="ml-icon-btn" id="ml-open-saved" title="Saved listings" aria-label="Saved listings">${icon('bookmark', 17)}</button>
             <button class="ml-icon-btn ${activeDrawerTab === 'settings' ? 'active' : ''}" id="ml-modal-settings" title="Settings" aria-label="Settings">${icon('sliders', 17)}</button>
             <button class="ml-icon-btn" id="ml-modal-close" title="Close" aria-label="Close">${icon('x', 18)}</button>
           </div>
@@ -681,6 +824,7 @@ function createModalBase(showLoading: boolean = true): void {
   updateDrawerProPill();
 
   document.getElementById('ml-modal-close')?.addEventListener('click', closeDrawer);
+  document.getElementById('ml-open-saved')?.addEventListener('click', openSavedPage);
 
   // Close when clicking outside the drawer onto the backdrop
   const overlay = modal.querySelector('.ml-overlay');
@@ -696,7 +840,7 @@ function createModalBase(showLoading: boolean = true): void {
     if (activeDrawerTab === 'settings') {
       activeDrawerTab = 'appraisal';
       if (latestAnalysis) {
-        renderInpageResults(latestAnalysis.analysis, latestAnalysis.context, latestAnalysis.isDemo);
+        showLatestAnalysis();
       } else {
         openInpageModal();
       }
@@ -705,6 +849,14 @@ function createModalBase(showLoading: boolean = true): void {
       renderInpageSettings();
     }
   });
+}
+
+function openSavedPage(): void {
+  try {
+    chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS' });
+  } catch {
+    // Extension context can be invalidated after an update; nothing useful to do here
+  }
 }
 
 function setSettingsButtonActive(active: boolean): void {
@@ -928,14 +1080,8 @@ function renderProActivatedSuccess(): void {
       openInpageModal();
       return;
     }
-    retryLastAction = () => openInpageModal();
-    createModalBase(true);
-    try {
-      const context = await harvestUniversalListing();
-      await executeAppraisal(context);
-    } catch (err: any) {
-      showModalError(err?.message || String(err));
-    }
+    reanalyzeAction = () => runListingAnalysis();
+    await runListingAnalysis();
   };
 
   document.getElementById('ml-pro-continue-btn')?.addEventListener('click', continueAppraisal);
@@ -961,9 +1107,12 @@ async function executeAppraisal(context: UniversalListingContext): Promise<void>
     const analysis = await analyzeWithGemini(context);
     await decrementFreeQuota();
     currentUserSub = await getUserSubscription();
-    latestAnalysis = { analysis, context, isDemo: false };
+    const analyzedAt = Date.now();
+    latestAnalysis = { analysis, context, isDemo: false, analyzedAt };
+    saveCachedAnalysis(context, analysis, analyzedAt).catch(() => {});
+    attachAnalysis(context.url, analysis, analyzedAt).catch(() => {});
     if (activeDrawerTab === 'appraisal') {
-      renderInpageResults(analysis, context, false);
+      renderInpageResults(analysis, context, false, analyzedAt);
     }
     updateDrawerProPill();
   } catch (err: any) {
@@ -1012,7 +1161,8 @@ function sectionHead(iconName: IconName, title: string, meta = ''): string {
 function renderInpageResults(
   analysis: AIProductAnalysis,
   context: UniversalListingContext,
-  isDemo: boolean
+  isDemo: boolean,
+  analyzedAt?: number
 ): void {
   const body = document.getElementById('ml-drawer-body');
   if (!body) return;
@@ -1136,7 +1286,17 @@ function renderInpageResults(
         ${icon('info')}
         <div><strong>Sample analysis.</strong> This is example data, not the page you’re viewing.</div>
       </div>
-    ` : ''}
+    ` : `
+      <div class="ml-toolbar ml-stagger" style="--i:${next()}">
+        <button class="ml-btn ml-btn-secondary is-sm" id="ml-save-btn">${icon('bookmark')}<span>Save</span></button>
+        <button class="ml-btn ml-btn-secondary is-sm" id="ml-share-btn">${icon('fileText')}<span>Copy summary</span></button>
+        <span class="ml-toolbar-meta" ${analyzedAt ? `title="${esc(new Date(analyzedAt).toLocaleString())}"` : ''}>
+          ${analyzedAt ? `${icon('clock', 13)}<span>${esc(timeAgo(analyzedAt))}</span>` : ''}
+        </span>
+        ${reanalyzeAction ? `<button class="ml-icon-btn is-sm" id="ml-reanalyze-btn" title="Run a fresh analysis${currentUserSub?.isPro ? '' : ' (uses one free analysis)'}" aria-label="Re-analyze">${icon('refresh', 15)}</button>` : ''}
+      </div>
+      <div id="ml-price-change-slot"></div>
+    `}
 
     <section class="ml-section ml-stagger tone-${tone}" style="--i:${next()}">
       <div class="ml-hero-product">${esc(resolvedProductName)}</div>
@@ -1238,8 +1398,19 @@ function renderInpageResults(
     ` : ''}
 
     <section class="ml-section ml-stagger" style="--i:${next()}">
-      ${sectionHead('message', 'Counter-offer', `<span class="ml-badge tone-accent">Offer ${esc(money(negotiation.recommendedOffer))}</span>`)}
-      <div class="ml-message">${esc(negotiation.counterOfferMessage)}</div>
+      ${sectionHead('message', 'Counter-offer', `<span class="ml-badge tone-accent">Suggested ${esc(money(negotiation.recommendedOffer))}</span>`)}
+      <div class="ml-offer-controls">
+        <div class="ml-stepper" role="group" aria-label="Offer amount">
+          <button class="ml-stepper-btn" id="ml-offer-dec" aria-label="Lower offer">${icon('minus', 14)}</button>
+          <span class="ml-stepper-value" id="ml-offer-amount" aria-live="polite"></span>
+          <button class="ml-stepper-btn" id="ml-offer-inc" aria-label="Raise offer">${icon('plus', 14)}</button>
+        </div>
+        <span class="ml-offer-delta" id="ml-offer-delta"></span>
+      </div>
+      <div class="ml-tabs" role="tablist" aria-label="Message style">
+        ${OFFER_TONES.map((t) => `<button class="ml-tab" role="tab" data-tone="${t.id}">${t.label}</button>`).join('')}
+      </div>
+      <div class="ml-message" id="ml-offer-message"></div>
       <button class="ml-btn ml-btn-primary is-block" id="ml-copy-inpage-btn">${icon('copy')}<span>Copy message</span></button>
     </section>
 
@@ -1297,15 +1468,15 @@ function renderInpageResults(
     }
   }
 
-  const wireCopy = (id: string, text: string, label: string, doneLabel: string) => {
+  const wireCopy = (id: string, getText: () => string, label: string, doneLabel: string, iconName: IconName = 'copy') => {
     document.getElementById(id)?.addEventListener('click', async (e) => {
       const btn = e.currentTarget as HTMLButtonElement;
       try {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(getText());
         setButtonLabel(btn, doneLabel, 'check');
         btn.classList.add('is-done');
         setTimeout(() => {
-          setButtonLabel(btn, label, 'copy');
+          setButtonLabel(btn, label, iconName);
           btn.classList.remove('is-done');
         }, 2200);
       } catch {
@@ -1314,8 +1485,128 @@ function renderInpageResults(
     });
   };
 
-  wireCopy('ml-copy-questions-btn', questions.map((q, i) => `${i + 1}. ${q}`).join('\n'), 'Copy', 'Copied');
-  wireCopy('ml-copy-inpage-btn', negotiation.counterOfferMessage, 'Copy message', 'Copied — paste it in chat');
+  wireCopy('ml-copy-questions-btn', () => questions.map((q, i) => `${i + 1}. ${q}`).join('\n'), 'Copy', 'Copied');
+  wireCopy('ml-copy-inpage-btn', () => document.getElementById('ml-offer-message')?.textContent || '', 'Copy message', 'Copied — paste it in chat');
+  wireCopy('ml-share-btn', () => buildDealSummary(analysis, context), 'Copy summary', 'Summary copied', 'fileText');
+
+  // ── Counter-offer builder ──
+  const asking = askingNum ?? null;
+  const recommended = Math.max(1, Math.round(negotiation?.recommendedOffer || (asking ? asking * 0.9 : 0) || 1));
+  const hasAiDraft = Boolean(negotiation?.counterOfferMessage);
+  const offerItem = shortItemName(analysis, 'item');
+  let offerAmount = recommended;
+  let offerTone: OfferTone = hasAiDraft ? 'ai' : 'friendly';
+
+  const renderOffer = () => {
+    const amountEl = document.getElementById('ml-offer-amount');
+    const deltaEl = document.getElementById('ml-offer-delta');
+    const msgEl = document.getElementById('ml-offer-message');
+    if (amountEl) amountEl.textContent = money(offerAmount);
+    if (deltaEl) {
+      if (asking && asking > 0) {
+        const diff = asking - offerAmount;
+        deltaEl.textContent =
+          diff > 0 ? `${money(diff)} below asking` : diff < 0 ? `${money(-diff)} above asking` : 'Matches asking price';
+        deltaEl.className = `ml-offer-delta${diff < 0 ? ' is-over' : ''}`;
+      } else {
+        deltaEl.textContent = '';
+      }
+    }
+    if (msgEl) {
+      msgEl.textContent =
+        offerTone === 'ai'
+          ? negotiation.counterOfferMessage
+          : buildOfferMessage(offerTone, { item: offerItem, amount: offerAmount, fairAverage: fair?.fairAverage });
+    }
+    document.querySelectorAll<HTMLButtonElement>(`#${MODAL_ID} .ml-tab`).forEach((tab) => {
+      const active = tab.dataset.tone === offerTone;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+      if (tab.dataset.tone === 'ai') tab.disabled = !hasAiDraft;
+    });
+  };
+
+  const adjustOffer = (direction: 1 | -1) => {
+    const step = offerStep(offerAmount);
+    const next = direction > 0 ? Math.floor(offerAmount / step) * step + step : Math.ceil(offerAmount / step) * step - step;
+    offerAmount = Math.max(step, next);
+    // The AI draft quotes its own amount, so switch to a template once the amount changes
+    if (offerTone === 'ai' && offerAmount !== recommended) offerTone = 'friendly';
+    renderOffer();
+  };
+
+  document.getElementById('ml-offer-dec')?.addEventListener('click', () => adjustOffer(-1));
+  document.getElementById('ml-offer-inc')?.addEventListener('click', () => adjustOffer(1));
+  document.querySelectorAll<HTMLButtonElement>(`#${MODAL_ID} .ml-tab`).forEach((tab) => {
+    tab.addEventListener('click', () => {
+      offerTone = (tab.dataset.tone as OfferTone) || 'friendly';
+      if (offerTone === 'ai') offerAmount = recommended;
+      renderOffer();
+    });
+  });
+  renderOffer();
+
+  // ── Toolbar: save / re-analyze ──
+  if (!isDemo) {
+    const saveBtn = document.getElementById('ml-save-btn') as HTMLButtonElement | null;
+    const setSaved = (saved: boolean) => {
+      if (!saveBtn) return;
+      setButtonLabel(saveBtn, saved ? 'Saved' : 'Save', saved ? 'bookmarkCheck' : 'bookmark');
+      saveBtn.classList.toggle('is-active', saved);
+      saveBtn.title = saved ? 'Remove from saved listings' : 'Save to your listings and track price changes';
+      saveBtn.dataset.saved = String(saved);
+    };
+
+    getWatchItem(context.url)
+      .then((item) => setSaved(Boolean(item)))
+      .catch(() => setSaved(false));
+
+    saveBtn?.addEventListener('click', async () => {
+      const saved = saveBtn.dataset.saved === 'true';
+      saveBtn.disabled = true;
+      try {
+        if (saved) {
+          const item = await getWatchItem(context.url);
+          if (item) await removeFromWatchlist(item.id);
+          setSaved(false);
+          showToast('Removed from saved');
+        } else {
+          // Start price tracking from today's price, not the (possibly older) analyzed one
+          const livePrice = readLivePrice(context.url);
+          await saveToWatchlist({ ...context, priceRaw: livePrice || context.priceRaw }, analysis, analyzedAt);
+          setSaved(true);
+          showToast('Saved — we’ll track price changes');
+        }
+      } catch {
+        showToast('Couldn’t update saved listings');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+
+    document.getElementById('ml-reanalyze-btn')?.addEventListener('click', () => {
+      latestAnalysis = null;
+      reanalyzeAction?.();
+    });
+
+    checkWatchedPrice(context.url).catch(() => {});
+  }
+}
+
+function showToast(message: string): void {
+  const drawer = document.querySelector(`#${MODAL_ID} .ml-drawer`);
+  if (!drawer) return;
+  let toast = drawer.querySelector<HTMLElement>('.ml-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'ml-toast';
+    toast.setAttribute('role', 'status');
+    drawer.appendChild(toast);
+  }
+  toast.innerHTML = `${icon('check')}<span>${esc(message)}</span>`;
+  toast.classList.remove('show');
+  void toast.offsetWidth; // restart the animation on repeated toasts
+  toast.classList.add('show');
 }
 
 // ─── 6. In-Drawer Settings View ───────────────────────────────────────────────
@@ -1376,6 +1667,35 @@ function renderInpageSettings(): void {
     </section>
 
     <section class="ml-section ml-settings-group">
+      <h3 class="ml-settings-group-title">Saved & history</h3>
+      <div class="ml-setting-row">
+        <div class="ml-setting-text">
+          <span class="ml-setting-name">Saved listings</span>
+          <span class="ml-setting-sub" id="ml-saved-count">Track prices, notes and compare items</span>
+        </div>
+        <button class="ml-btn ml-btn-secondary is-sm" id="ml-settings-open-saved"><span>Open</span>${icon('external')}</button>
+      </div>
+      <div class="ml-setting-row">
+        <div class="ml-setting-text">
+          <span class="ml-setting-name">Analysis history</span>
+          <span class="ml-setting-sub" id="ml-history-count">Reopen past analyses without using another one</span>
+        </div>
+        <button class="ml-btn ml-btn-ghost is-sm" id="ml-clear-history-btn">Clear</button>
+      </div>
+    </section>
+
+    <section class="ml-section ml-settings-group">
+      <h3 class="ml-settings-group-title">Keyboard shortcut</h3>
+      <div class="ml-setting-row">
+        <div class="ml-setting-text">
+          <span class="ml-setting-name">Open MarketLens</span>
+          <span class="ml-setting-sub">Change it at chrome://extensions/shortcuts</span>
+        </div>
+        <span class="ml-kbd-group"><kbd class="ml-kbd">Alt</kbd><kbd class="ml-kbd">Shift</kbd><kbd class="ml-kbd">M</kbd></span>
+      </div>
+    </section>
+
+    <section class="ml-section ml-settings-group">
       <h3 class="ml-settings-group-title">Appearance</h3>
       <div class="ml-setting-stack">
         <span class="ml-setting-name">Theme</span>
@@ -1405,13 +1725,12 @@ function renderInpageSettings(): void {
       </div>
     </section>
 
-    <div class="ml-toast" id="ml-save-feedback" role="status">${icon('check')}Saved</div>
   `;
 
   document.getElementById('ml-back-to-appraisal')?.addEventListener('click', () => {
     activeDrawerTab = 'appraisal';
     if (latestAnalysis) {
-      renderInpageResults(latestAnalysis.analysis, latestAnalysis.context, latestAnalysis.isDemo);
+      showLatestAnalysis();
     } else {
       openInpageModal();
     }
@@ -1419,6 +1738,33 @@ function renderInpageSettings(): void {
 
   document.getElementById('ml-settings-upgrade-btn')?.addEventListener('click', () => {
     renderInpagePaywall();
+  });
+
+  document.getElementById('ml-settings-open-saved')?.addEventListener('click', openSavedPage);
+
+  const updateCounts = async () => {
+    const [saved, history] = await Promise.all([
+      getWatchlist().then((l) => l.length).catch(() => 0),
+      countCachedAnalyses().catch(() => 0),
+    ]);
+    const savedEl = document.getElementById('ml-saved-count');
+    const historyEl = document.getElementById('ml-history-count');
+    const clearBtn = document.getElementById('ml-clear-history-btn') as HTMLButtonElement | null;
+    if (savedEl) savedEl.textContent = saved > 0 ? `${saved} saved · track prices and compare` : 'Nothing saved yet';
+    if (historyEl) {
+      historyEl.textContent =
+        history > 0
+          ? `${history} past ${history === 1 ? 'analysis' : 'analyses'} stored on this device`
+          : 'No past analyses stored';
+    }
+    if (clearBtn) clearBtn.disabled = history === 0;
+  };
+  updateCounts();
+
+  document.getElementById('ml-clear-history-btn')?.addEventListener('click', async () => {
+    await clearAnalysisHistory().catch(() => {});
+    await updateCounts();
+    showToast('Analysis history cleared');
   });
 
   document.getElementById('ml-settings-portal-btn')?.addEventListener('click', async () => {
@@ -1442,12 +1788,7 @@ function renderInpageSettings(): void {
     applyTheme();
     checkAndInject();
 
-    const fb = document.getElementById('ml-save-feedback');
-    if (fb) {
-      fb.classList.remove('show');
-      void fb.offsetWidth; // restart the animation on repeated saves
-      fb.classList.add('show');
-    }
+    showToast('Saved');
   };
 
   document.getElementById('pref-grid-badges')?.addEventListener('change', (e) => {

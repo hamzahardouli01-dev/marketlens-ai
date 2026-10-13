@@ -1,6 +1,6 @@
 # Privacy Policy for MarketLens AI
 
-**Last Updated:** September 2026
+**Last Updated:** October 2026
 
 MarketLens AI ("we", "our", or "the Extension") respects your privacy. This Privacy Policy describes how MarketLens AI handles information when you use our browser extension and backend services.
 
@@ -9,7 +9,7 @@ MarketLens AI ("we", "our", or "the Extension") respects your privacy. This Priv
 ## 1. Information We Collect
 
 ### A. Listing Data for Appraisals
-When you click **"AI Deal Appraisal"** on a marketplace listing (Facebook Marketplace, eBay, Craigslist), MarketLens AI extracts:
+When you click **"Analyze deal"** on a marketplace listing (Facebook Marketplace, eBay, Craigslist), MarketLens AI extracts:
 - Public listing title
 - Asking price & currency
 - Seller's public item description
@@ -22,6 +22,13 @@ We assign an anonymous random UUID (e.g., `usr_xxxx`) stored locally in your bro
 
 ### C. Payment & Billing Information
 Subscription payments are processed directly by **Stripe**. We do **not** store or have access to your credit card numbers or banking credentials. Stripe handles all financial data under [Stripe's Privacy Policy](https://stripe.com/privacy).
+
+### D. Data Stored Only on Your Device
+To make saved listings, price-drop alerts and instant re-opening of past analyses work, MarketLens AI keeps the following in your browser's local extension storage (`chrome.storage.local`):
+- Listings you choose to save, with their analysis, the prices observed when you revisit them, and any status or notes you add
+- Your most recent analyses (up to 60), without listing photos
+
+This data never leaves your device and is not sent to our servers. You can delete it at any time from **Settings → Analysis history → Clear** in the drawer, or **Delete all** on the Saved listings page. Uninstalling the extension also removes it.
 
 ---
 

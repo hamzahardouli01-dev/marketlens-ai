@@ -703,7 +703,7 @@ export async function harvestUniversalListing(doc: Document = document): Promise
   // 1. Verify that this is an individual listing or open item dialog
   if (!isIndividualListing(url, doc)) {
     throw new Error(
-      'NOT_A_LISTING: You are viewing the general Marketplace feed. Please click on any item to open its listing, or click the floating "✨ AI Deal Appraisal" button on the listing!'
+      'NOT_A_LISTING: You are viewing the Marketplace feed. Open an item listing, or use the Analyze badge on any item card.'
     );
   }
 
