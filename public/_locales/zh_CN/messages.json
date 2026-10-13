@@ -4,7 +4,7 @@
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "购买前检查任何 Facebook Marketplace 商品：合理价格、诈骗警示、照片成色检查，以及可直接发送的还价消息。",
+    "message": "Facebook Marketplace 价格检查与防骗助手：查看合理价格、识别风险信号、检查照片成色，并给出合适的还价。",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {

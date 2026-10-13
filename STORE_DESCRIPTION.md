@@ -2,12 +2,16 @@
 
 > The **name** and **summary** are read from the extension package
 > (`public/_locales/<language>/messages.json`), so Chrome shows them in each
-> user's language automatically. Only the **full description** below is
-> pasted into the Developer Dashboard.
+> user's language automatically. Only the **full description** (section 3)
+> is pasted into the Developer Dashboard.
 >
-> Keep "Facebook Marketplace" to natural, descriptive mentions. Repeating
-> platform or brand keywords is treated as keyword spam by Chrome Web Store
-> review. Don't use the Facebook or Meta logo in screenshots or promo tiles.
+> Keyword rules for this listing: keywords go where search gives them weight
+> (name, summary, opening lines, section headings, FAQ questions) and read
+> naturally everywhere. No keyword lists, no lists of brands or sites, no
+> repeated phrases, no unattributed testimonials — Chrome Web Store review
+> treats those as keyword spam ("Yellow Argon"), which this listing has
+> already been flagged for once. Don't use the Facebook or Meta logo in
+> screenshots or promo tiles.
 
 ---
 
@@ -21,68 +25,129 @@ MarketLens: AI Deal Checker for Facebook Marketplace
 
 ## 2. Summary (from the package, ≤ 132 characters)
 ```text
-Check any Facebook Marketplace listing before you buy: fair price, scam warnings, photo condition and a ready-to-send offer.
+Facebook Marketplace price checker & scam detector. See the fair price, spot red flags, check photos and send the right offer.
 ```
-*(124 characters)*
+*(126 characters — shown under the name in Chrome Web Store search results)*
 
 ---
 
 ## 3. Full description (paste into the Developer Dashboard)
 
 ```text
-Shopping on Facebook Marketplace? Know if a listing is a good deal before you message the seller.
+Is that Facebook Marketplace deal actually good? Find out in one click, before you message the seller.
 
-MarketLens checks any Facebook Marketplace listing in one click: is the price fair, are there signs of a scam, what condition is the item really in, and what should you offer? It also works on eBay and Craigslist.
+MarketLens is an AI shopping assistant and deal checker for Facebook Marketplace. Open any listing and instantly see a Buy Score, the fair used price, scam red flags, a photo condition check and a ready-to-send counter-offer. It's the easiest way to stop overpaying, spot fake listings and negotiate a better price on used items. Works on eBay and Craigslist too.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━
 WHAT YOU GET ON EVERY LISTING
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-✔ Buy score and verdict
-A 0–100 score with a clear answer: Buy now, Good buy, Negotiate first, Caution or Walk away.
+✔ BUY SCORE: IS IT A GOOD DEAL?
+A clear 0–100 score and verdict (Buy now, Good buy, Negotiate first, Caution or Walk away) with a plain-language summary of why.
 
-✔ Fair price check
-See the asking price next to the fair used price range and the original retail price, so you know instantly if it's underpriced or overpriced.
+✔ FAIR PRICE CHECKER
+See the asking price next to the fair used price range and the original retail price, plus how far above or below fair market value the listing is. No more guessing what something is worth or scrolling through sold listings.
 
-✔ Scam and risk warnings
-Flags stock photos, prices that are too good to be true, pressure tactics, vague descriptions and other common marketplace scams.
+✔ SCAM DETECTOR AND RED FLAGS
+MarketLens flags the warning signs of Marketplace scams: stock or catalog photos, prices that are too good to be true, pressure to pay before you see the item, vague or copied descriptions and missing details. Every warning is ranked as critical, warning or info.
 
-✔ Photo condition check
-Spots scratches, dents, cracked screens and wear in the photos, and lists the accessories that are included.
+✔ PHOTO CONDITION CHECK
+AI inspects the listing photos for scratches, dents, cracked screens and wear, grades the condition (Mint, Good, Fair or Poor), tells you whether it's a real seller photo or a stock image, and lists the accessories it can see.
 
-✔ Counter-offer builder
-Get a suggested offer, adjust the amount, pick a style (Friendly, Direct or Cash pickup) and copy a ready-to-send message for Messenger.
+✔ COUNTER-OFFER AND NEGOTIATION HELPER
+Get a suggested offer based on market value, adjust the amount, pick a message style (Friendly, Direct or Cash pickup) and copy a ready-to-send message for Messenger.
 
-✔ Questions to ask the seller
-Smart questions tailored to the item, so you don't forget to ask about the battery, receipt, warranty or flaws.
+✔ QUESTIONS TO ASK THE SELLER
+Smart questions tailored to the item, like battery health, receipts, warranty, the reason for selling and visible flaws, so you know exactly what to check before you meet.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TRACK AND COMPARE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✔ RESALE VALUE AND FLIP CALCULATOR
+Buying to resell? See the estimated resale value, your profit or loss, and how fast it's likely to sell. Made for flippers and resellers hunting for profitable deals.
 
-• Save listings and get price-drop alerts when you come back.
-• Compare up to 5 saved items side by side.
-• Track each item: Watching, Contacted, Negotiating, Bought or Passed.
-• Reopen past analyses instantly without using another one.
-• Export your saved list to CSV.
+━━━━━━━━━━━━━━━━━━━━━━━━
+SAVE, TRACK AND COMPARE DEALS
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-WORKS THE WAY YOU BROWSE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✔ Save listings to your watchlist in one click
+✔ Price-drop alerts: come back to a saved listing and MarketLens shows how much the price has dropped since you saved it
+✔ Side-by-side price comparison of up to 5 items: price, score, fair value, condition and risks
+✔ Track every deal as Watching, Contacted, Negotiating, Bought or Passed, with your own notes
+✔ Reopen past analyses instantly without using another one
+✔ Search, sort and export your saved deals to CSV
 
-• An "Analyze" badge on every item in the Facebook Marketplace feed.
-• A one-click "Analyze deal" button on listing pages.
-• Keyboard shortcut: Alt+Shift+M.
-• Available in 10 languages — English, Español, Français, Deutsch, العربية, Português, 中文, हिन्दी, বাংলা and Русский. It follows your Facebook or browser language automatically.
-• Light and dark themes.
+━━━━━━━━━━━━━━━━━━━━━━━━
+BUILT FOR THE WAY YOU SHOP
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✔ An "Analyze" badge on every item in your Facebook Marketplace feed, and items you've already checked show their score right in the feed
+✔ One-click "Analyze deal" button on every listing page
+✔ Keyboard shortcut (Alt+Shift+M) and right-click menu
+✔ Available in 10 languages: English, Español, Français, Deutsch, العربية, Português, 中文, हिन्दी, বাংলা and Русский. MarketLens follows your Facebook or browser language automatically.
+✔ Light and dark themes
+
+Use it on phones, laptops, game consoles, TVs, furniture, appliances, bikes, tools, baby gear, cars and almost anything else sold secondhand.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+HOW IT WORKS
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Add MarketLens to Chrome and open Facebook Marketplace.
+2. Open a listing, or click the Analyze badge on any item in the feed.
+3. Get your Buy Score, fair price, red flags and counter-offer right on the page.
+
+No account and no setup needed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
 FREE TO TRY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-Install and start right away — no account, no setup. Your first analysis is free. MarketLens Pro unlocks unlimited analyses.
+Your first deal analysis is free. Upgrade to MarketLens Pro for unlimited analyses, billed monthly or yearly. Cancel anytime.
 
-Privacy: we never read your messages, profile or friends list, and we don't sell your data. Saved listings and notes stay on your device.
+━━━━━━━━━━━━━━━━━━━━━━━━
+FREQUENTLY ASKED QUESTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-MarketLens is an independent tool. It is not affiliated with, endorsed by or sponsored by Meta Platforms, Inc. or Facebook. Facebook and Marketplace are trademarks of Meta Platforms, Inc.
+How can I tell if a Facebook Marketplace listing is a scam?
+Open the listing and click "Analyze deal". MarketLens compares the price with market value, checks the photos and description for common scam patterns and lists every red flag it finds.
+
+How much should I offer on Facebook Marketplace?
+MarketLens suggests an offer based on the fair used price and the item's condition, then writes the message for you in the style you choose.
+
+How do I know what a used item is worth?
+The fair price check shows the typical used price range and the original retail price, so you can see right away if the asking price is fair.
+
+Does it work on eBay and Craigslist?
+Yes. Open any eBay or Craigslist listing and click "Analyze deal".
+
+Does MarketLens read my messages or profile?
+No. It never reads your messages, profile or friends list.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+PRIVACY
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+Only the listing you choose to analyze, including its photos, is sent securely to our server to create the analysis. MarketLens never reads your messages, profile or friends list, and we never sell your data. Your saved listings and notes stay on your device.
+
+MarketLens is an independent tool. It is not affiliated with, endorsed by or sponsored by Meta Platforms, Inc. Facebook and Marketplace are trademarks of Meta Platforms, Inc.
 ```
+
+---
+
+## 4. What else moves the ranking
+
+Chrome Web Store search weighs the name and summary most, then installs,
+ratings, how many users keep the extension, and how recently it was updated.
+The description helps people (and Google search) understand the listing, but
+these move ranking more:
+
+1. **Ratings and reviews.** Ask happy users for a review: a short in-app
+   prompt after a good analysis is the most effective way.
+2. **Screenshots.** Upload all 5 slots at 1280×800 showing the Buy Score,
+   price check, scam warnings, counter-offer builder and saved-deals compare
+   view. Screenshots drive install rate, which drives ranking.
+3. **Localized listings.** Add a translated full description for each
+   supported language in the Developer Dashboard. The name and summary are
+   already translated in the package.
+4. **Category and links.** Category: Shopping. Add a support email and a
+   website or landing page URL.
+5. **Regular updates.** Ship small improvements regularly; recently updated
+   extensions are favored.

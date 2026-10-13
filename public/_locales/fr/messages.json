@@ -4,7 +4,7 @@
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "Vérifiez une annonce Facebook Marketplace avant d’acheter : prix juste, alertes d’arnaque, état sur photos et offre prête à envoyer.",
+    "message": "Vérificateur de prix et détecteur d’arnaques pour Facebook Marketplace : prix juste, signaux d’alerte, photos et la bonne offre.",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {

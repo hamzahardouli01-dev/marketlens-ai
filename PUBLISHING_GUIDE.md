@@ -84,7 +84,7 @@ This automatically:
 Copy and paste directly from [STORE_DESCRIPTION.md](STORE_DESCRIPTION.md):
 - **Name:** comes from the extension package (`public/_locales/*/messages.json`) — `MarketLens: AI Deal Checker for Facebook Marketplace`, translated into 10 languages.
 - **Summary (132 chars):** also from the package —
-  > Check any Facebook Marketplace listing before you buy: fair price, scam warnings, photo condition and a ready-to-send offer.
+  > Facebook Marketplace price checker & scam detector. See the fair price, spot red flags, check photos and send the right offer.
 - **Description:** *(Copy the full text from [STORE_DESCRIPTION.md](STORE_DESCRIPTION.md))*
 - **Category:** `Shopping` or `Productivity`
 - **Language:** `English`

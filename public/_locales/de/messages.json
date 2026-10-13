@@ -4,7 +4,7 @@
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "Prüfe Facebook-Marketplace-Anzeigen vor dem Kauf: fairer Preis, Betrugswarnungen, Zustand laut Fotos und ein fertiges Angebot.",
+    "message": "Preischeck und Betrugserkennung für Facebook Marketplace: fairer Preis, Warnsignale, Fotoprüfung und das passende Angebot.",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
