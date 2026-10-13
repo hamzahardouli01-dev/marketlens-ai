@@ -69,7 +69,7 @@ app.get('/health', (_req: Request, res: Response) => {
     status: 'ok',
     service: 'MarketLens AI Backend',
     timestamp: Date.now(),
-    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    aiConfigured: Boolean(process.env.GEMINI_API_KEY),
     stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
   });
 });
@@ -248,10 +248,12 @@ app.post('/api/analyze', async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
+    // Full details stay in the server log; users get a generic message that
+    // doesn't expose the AI provider, model names or configuration.
     console.error('[Appraisal Error]:', err);
     res.status(500).json({
       error: 'ANALYSIS_FAILED',
-      message: err.message || 'Server failed to analyze listing.',
+      message: 'The analysis service is temporarily unavailable. Please try again in a moment.',
     });
   }
 });

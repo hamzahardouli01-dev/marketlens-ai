@@ -1,14 +1,14 @@
 {
   "extName": {
-    "message": "MarketLens AI — Smarter Kaufassistent",
+    "message": "MarketLens: KI-Angebotscheck für Facebook Marketplace",
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "KI-Bewertung von Kleinanzeigen und Betrugserkennung. Prüft Preise, erkennt Mängel und berechnet den Wiederverkaufswert.",
+    "message": "Prüfe Facebook-Marketplace-Anzeigen vor dem Kauf: fairer Preis, Betrugswarnungen, Zustand laut Fotos und ein fertiges Angebot.",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
-    "message": "MarketLens AI — Analyse öffnen",
+    "message": "MarketLens — Dieses Angebot prüfen",
     "description": "Toolbar button tooltip"
   },
   "commandOpen": {

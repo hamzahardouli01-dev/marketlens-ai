@@ -1,14 +1,14 @@
 {
   "extName": {
-    "message": "MarketLens AI — स्मार्ट ख़रीदारी सहायक",
+    "message": "MarketLens: Facebook Marketplace के लिए AI डील चेकर",
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "सेकंड-हैंड लिस्टिंग का AI मूल्यांकन और धोखाधड़ी की पहचान। कीमतें जाँचता है, कमियाँ पकड़ता है, दोबारा बेचने का मुनाफ़ा बताता है।",
+    "message": "ख़रीदने से पहले कोई भी Facebook Marketplace लिस्टिंग जाँचें: सही कीमत, धोखाधड़ी की चेतावनी, फ़ोटो से हालत और तैयार ऑफ़र।",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
-    "message": "MarketLens AI — डील विश्लेषण खोलें",
+    "message": "MarketLens — यह डील जाँचें",
     "description": "Toolbar button tooltip"
   },
   "commandOpen": {

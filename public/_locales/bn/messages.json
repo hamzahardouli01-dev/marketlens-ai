@@ -1,14 +1,14 @@
 {
   "extName": {
-    "message": "MarketLens AI — স্মার্ট কেনাকাটা সহকারী",
+    "message": "MarketLens: Facebook Marketplace-এর জন্য AI ডিল চেকার",
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "পুরনো জিনিসের বিজ্ঞাপনের AI মূল্যায়ন ও প্রতারণা শনাক্তকরণ। দাম যাচাই করে, ত্রুটি খোঁজে ও পুনর্বিক্রয়ের লাভ হিসাব করে।",
+    "message": "কেনার আগে যেকোনো Facebook Marketplace বিজ্ঞাপন যাচাই করুন: ন্যায্য দাম, প্রতারণার সতর্কতা, ছবিতে অবস্থা ও তৈরি অফার।",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
-    "message": "MarketLens AI — ডিল বিশ্লেষণ খুলুন",
+    "message": "MarketLens — এই ডিল যাচাই করুন",
     "description": "Toolbar button tooltip"
   },
   "commandOpen": {

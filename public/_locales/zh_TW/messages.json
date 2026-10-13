@@ -1,14 +1,14 @@
 {
   "extName": {
-    "message": "MarketLens AI — 智能购物助手",
+    "message": "MarketLens：Facebook Marketplace AI 交易检查助手",
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "用 AI 评估二手商品报价并识别诈骗。检查价格、发现瑕疵、估算转卖利润。",
+    "message": "购买前检查任何 Facebook Marketplace 商品：合理价格、诈骗警示、照片成色检查，以及可直接发送的还价消息。",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
-    "message": "MarketLens AI — 打开交易分析",
+    "message": "MarketLens — 检查这笔交易",
     "description": "Toolbar button tooltip"
   },
   "commandOpen": {

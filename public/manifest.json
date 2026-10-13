@@ -58,7 +58,6 @@
   ],
   "host_permissions": [
     "https://marketlens-backend-nqg2.onrender.com/*",
-    "https://generativelanguage.googleapis.com/*",
     "https://*.facebook.com/*",
     "https://*.fbcdn.net/*",
     "https://*.ebay.com/*",

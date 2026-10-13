@@ -15,7 +15,7 @@ async function main() {
   console.log('⚡ Step 2: TypeScript check...');
   execSync('npx tsc -b', { cwd: rootDir, stdio: 'inherit' });
 
-  console.log('⚡ Step 3: Building Popup and Options UI...');
+  console.log('⚡ Step 3: Building Options UI...');
   await build({
     configFile: false,
     plugins: [react()],
@@ -25,7 +25,6 @@ async function main() {
       emptyOutDir: true,
       rollupOptions: {
         input: {
-          popup: resolve(rootDir, 'popup.html'),
           options: resolve(rootDir, 'options.html'),
         },
       },

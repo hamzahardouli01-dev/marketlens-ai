@@ -1,14 +1,14 @@
 {
   "extName": {
-    "message": "MarketLens AI — مساعد الشراء الذكي",
+    "message": "MarketLens: فاحص الصفقات بالذكاء الاصطناعي لـ Facebook Marketplace",
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "تقييم العروض بالذكاء الاصطناعي وكشف الاحتيال في إعلانات المستعمل. يفحص الأسعار ويكتشف العيوب ويحسب ربح إعادة البيع.",
+    "message": "افحص أي إعلان على Facebook Marketplace قبل الشراء: السعر العادل، تحذيرات الاحتيال، حالة المنتج من الصور، وعرض جاهز للإرسال.",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
-    "message": "MarketLens AI — فتح تحليل العرض",
+    "message": "MarketLens — افحص هذه الصفقة",
     "description": "Toolbar button tooltip"
   },
   "commandOpen": {

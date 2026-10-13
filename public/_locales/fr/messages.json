@@ -1,14 +1,14 @@
 {
   "extName": {
-    "message": "MarketLens AI — Assistant d’achat intelligent",
+    "message": "MarketLens : vérificateur d’annonces IA pour Facebook Marketplace",
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "Évaluation des annonces par IA et détection d’arnaques. Vérifie les prix, repère les défauts et estime la revente.",
+    "message": "Vérifiez une annonce Facebook Marketplace avant d’acheter : prix juste, alertes d’arnaque, état sur photos et offre prête à envoyer.",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
-    "message": "MarketLens AI — Ouvrir l’analyse",
+    "message": "MarketLens — Vérifier cette annonce",
     "description": "Toolbar button tooltip"
   },
   "commandOpen": {

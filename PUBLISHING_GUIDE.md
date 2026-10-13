@@ -78,14 +78,14 @@ This automatically:
 
 ### 2. Upload Your Extension
 1. Click **+ Add new item**.
-2. Drag and drop your **`marketlens-ai-v1.0.0.zip`** file.
+2. Drag and drop the zip created by `npm run release` (named **`marketlens-ai-v<version>.zip`**, e.g. `marketlens-ai-v1.1.0.zip`).
 
 ### 3. Store Listing Information
-Copy and paste directly from [STORE_DESCRIPTION.md](file:///Users/hamzahardouli/Documents/plugij/STORE_DESCRIPTION.md):
-- **Name:** `MarketLens AI — Smart Buying Assistant`
-- **Summary (132 chars):**
-  > AI deal appraisal with Gemini Vision. Compares retail MSRP vs used market price, inspects photos for flaws & scores resale flip profit.
-- **Description:** *(Copy the full formatted markdown text from [STORE_DESCRIPTION.md](file:///Users/hamzahardouli/Documents/plugij/STORE_DESCRIPTION.md))*
+Copy and paste directly from [STORE_DESCRIPTION.md](STORE_DESCRIPTION.md):
+- **Name:** comes from the extension package (`public/_locales/*/messages.json`) — `MarketLens: AI Deal Checker for Facebook Marketplace`, translated into 10 languages.
+- **Summary (132 chars):** also from the package —
+  > Check any Facebook Marketplace listing before you buy: fair price, scam warnings, photo condition and a ready-to-send offer.
+- **Description:** *(Copy the full text from [STORE_DESCRIPTION.md](STORE_DESCRIPTION.md))*
 - **Category:** `Shopping` or `Productivity`
 - **Language:** `English`
 

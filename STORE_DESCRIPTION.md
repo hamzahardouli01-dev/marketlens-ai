@@ -1,84 +1,88 @@
-# Chrome Web Store Listing — MarketLens AI (Clean & Compliant Copy)
+# Chrome Web Store Listing — MarketLens: AI Deal Checker for Facebook Marketplace
+
+> The **name** and **summary** are read from the extension package
+> (`public/_locales/<language>/messages.json`), so Chrome shows them in each
+> user's language automatically. Only the **full description** below is
+> pasted into the Developer Dashboard.
+>
+> Keep "Facebook Marketplace" to natural, descriptive mentions. Repeating
+> platform or brand keywords is treated as keyword spam by Chrome Web Store
+> review. Don't use the Facebook or Meta logo in screenshots or promo tiles.
 
 ---
 
-## 📌 1. Extension Name (Store Title)
+## 1. Extension name (from the package)
 ```text
-MarketLens AI — Smart Buying Assistant
+MarketLens: AI Deal Checker for Facebook Marketplace
 ```
+*(52 characters — limit 75)*
 
 ---
 
-## 📌 2. Short Description / Summary (Strictly ≤ 132 chars)
+## 2. Summary (from the package, ≤ 132 characters)
 ```text
-AI deal appraisals & scam detection for marketplace listings. Inspects prices, detects flaws, and calculates flip profit.
+Check any Facebook Marketplace listing before you buy: fair price, scam warnings, photo condition and a ready-to-send offer.
 ```
-*(Exact length: 121 characters)*
+*(124 characters)*
 
 ---
 
-## 📌 3. Full Description (100% Policy-Compliant — No Brand Stuffing)
+## 3. Full description (paste into the Developer Dashboard)
 
-```markdown
-Never get scammed or overpay on secondhand marketplace listings again.
+```text
+Shopping on Facebook Marketplace? Know if a listing is a good deal before you message the seller.
 
-MarketLens AI is your intelligent buying assistant and deal appraiser, powered by Google Gemini Vision with real-time web search grounding.
-
-Whether you are shopping for secondhand goods or looking for profitable items to flip, MarketLens AI inspects listing photos, prices, descriptions, and seller red flags in one click.
+MarketLens checks any Facebook Marketplace listing in one click: is the price fair, are there signs of a scam, what condition is the item really in, and what should you offer? It also works on eBay and Craigslist.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ KEY FEATURES
+WHAT YOU GET ON EVERY LISTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🏷️ 1. 3-Way Price Reality Check
-Know immediately if a deal is genuinely underpriced or overpriced:
-• Compares asking price against original retail MSRP.
-• Uses real-time web search grounding to evaluate fair used market value.
-• Provides instant deal status badges: Steal Deal, Fair Market Price, or Overpriced.
+✔ Buy score and verdict
+A 0–100 score with a clear answer: Buy now, Good buy, Negotiate first, Caution or Walk away.
 
-🛡️ 2. Scam & Red-Flag Detection
-Protect yourself from marketplace fraud before meeting a seller:
-• Detects inconsistent hardware specifications and counterfeit indicators.
-• Flags suspicious seller patterns, missing serial numbers, and bait-and-switch listings.
-• Generates tailored inspection questions to ask the seller before purchasing.
+✔ Fair price check
+See the asking price next to the fair used price range and the original retail price, so you know instantly if it's underpriced or overpriced.
 
-📸 3. Photo Flaw & Authenticity Inspection
-Examines product images with advanced vision models:
-• Authenticity verification: Distinguishes real seller-taken photos from stock catalog images.
-• Flaw detection: Spots scratches, dents, cracked screens, and heavy cosmetic wear.
-• Accessory verification: Identifies included cables, controllers, or original packaging.
-• Condition grading: Assigns an objective condition score (Mint, Good, Fair, or Poor).
+✔ Scam and risk warnings
+Flags stock photos, prices that are too good to be true, pressure tactics, vague descriptions and other common marketplace scams.
 
-📈 4. Secondhand Resale & Flip Profit Calculator
-Evaluate items for resale potential:
-• Flip potential score: Evaluates market liquidity and demand.
-• Projected net profit: Estimates your dollar margin after purchase.
-• Resale timeframe: Indicates expected turnover speed (Fast Flip, Moderate, or Slow).
+✔ Photo condition check
+Spots scratches, dents, cracked screens and wear in the photos, and lists the accessories that are included.
 
-💬 5. Smart Negotiation Assistant
-Take the stress out of making an offer:
-• Recommends a fair, data-backed cash offer.
-• Generates a polite, ready-to-send counter-offer message.
-• One-click copy to clipboard makes messaging sellers quick and effortless.
+✔ Counter-offer builder
+Get a suggested offer, adjust the amount, pick a style (Friendly, Direct or Cash pickup) and copy a ready-to-send message for Messenger.
+
+✔ Questions to ask the seller
+Smart questions tailored to the item, so you don't forget to ask about the battery, receipt, warranty or flaws.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🛒 SUPPORTED CATEGORIES
+TRACK AND COMPARE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-MarketLens AI assists you across major secondhand marketplace websites and popular categories:
-• Consumer Electronics & Computers
-• Gaming Consoles & Accessories
-• Vehicles, Bicycles & Automotive Parts
-• Watches, Jewelry & Collectibles
-• Home Furniture, Power Tools & Musical Instruments
+• Save listings and get price-drop alerts when you come back.
+• Compare up to 5 saved items side by side.
+• Track each item: Watching, Contacted, Negotiating, Bought or Passed.
+• Reopen past analyses instantly without using another one.
+• Export your saved list to CSV.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ ZERO SETUP REQUIRED
+WORKS THE WAY YOU BROWSE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-• Instant start: Install the extension and begin appraising deals immediately. No API keys or technical setup required.
-• MarketLens Pro: Optional upgrade for power users seeking unlimited appraisals and deep market intelligence.
-• Privacy focused: We respect your privacy. No personal browsing history is tracked or sold.
+• An "Analyze" badge on every item in the Facebook Marketplace feed.
+• A one-click "Analyze deal" button on listing pages.
+• Keyboard shortcut: Alt+Shift+M.
+• Available in 10 languages — English, Español, Français, Deutsch, العربية, Português, 中文, हिन्दी, বাংলা and Русский. It follows your Facebook or browser language automatically.
+• Light and dark themes.
 
-Make smarter buying decisions and uncover the best marketplace deals with MarketLens AI.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FREE TO TRY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Install and start right away — no account, no setup. Your first analysis is free. MarketLens Pro unlocks unlimited analyses.
+
+Privacy: we never read your messages, profile or friends list, and we don't sell your data. Saved listings and notes stay on your device.
+
+MarketLens is an independent tool. It is not affiliated with, endorsed by or sponsored by Meta Platforms, Inc. or Facebook. Facebook and Marketplace are trademarks of Meta Platforms, Inc.
 ```

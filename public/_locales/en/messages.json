@@ -1,14 +1,14 @@
 {
   "extName": {
-    "message": "MarketLens AI — Smart Buying Assistant",
+    "message": "MarketLens: AI Deal Checker for Facebook Marketplace",
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "AI deal appraisals & scam detection for marketplace listings. Inspects prices, detects flaws, and calculates flip profit.",
+    "message": "Check any Facebook Marketplace listing before you buy: fair price, scam warnings, photo condition and a ready-to-send offer.",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
-    "message": "MarketLens AI — Open deal analysis",
+    "message": "MarketLens — Check this Marketplace deal",
     "description": "Toolbar button tooltip"
   },
   "commandOpen": {

@@ -59,6 +59,7 @@ import {
 import { icon, type IconName } from './icons';
 import { buildPriceScale, esc, money, timeAgo } from '../utils/format';
 import { listingKey } from '../utils/listing';
+import { publicErrorDetail } from '../utils/errors';
 import {
   OFFER_TONES,
   buildDealSummary,
@@ -1207,13 +1208,14 @@ function showModalError(msg: string): void {
   const body = document.getElementById('ml-drawer-body');
   if (!body) return;
   rerenderCurrentView = () => showModalError(msg);
+  const detail = publicErrorDetail(msg);
 
   body.innerHTML = `
     <div class="ml-empty ml-stagger">
       <div class="ml-empty-icon tone-danger">${icon('alert', 22)}</div>
       <h2 class="ml-empty-title">${esc(t('error.title'))}</h2>
       <p class="ml-empty-sub">${esc(t('error.sub'))}</p>
-      <p class="ml-error-msg" dir="auto">${esc(msg)}</p>
+      ${detail ? `<p class="ml-error-msg" dir="auto">${esc(detail)}</p>` : ''}
       <div class="ml-empty-actions">
         ${retryLastAction ? `<button class="ml-btn ml-btn-primary is-block" id="ml-error-retry">${icon('refresh')}<span>${esc(t('error.retry'))}</span></button>` : ''}
         <button class="ml-btn ml-btn-link" id="ml-error-demo">${esc(t('common.viewSample'))}</button>

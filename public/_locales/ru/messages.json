@@ -1,14 +1,14 @@
 {
   "extName": {
-    "message": "MarketLens AI — Умный помощник покупателя",
+    "message": "MarketLens: ИИ-проверка сделок на Facebook Marketplace",
     "description": "Extension name (max 75 characters)"
   },
   "extDescription": {
-    "message": "ИИ-оценка объявлений и защита от мошенников. Проверяет цены, находит дефекты и считает выгоду от перепродажи.",
+    "message": "Проверьте объявление на Facebook Marketplace до покупки: честная цена, признаки обмана, состояние по фото и готовое предложение.",
     "description": "Store / extensions page description (max 132 characters)"
   },
   "actionTitle": {
-    "message": "MarketLens AI — Открыть анализ сделки",
+    "message": "MarketLens — Проверить сделку",
     "description": "Toolbar button tooltip"
   },
   "commandOpen": {

@@ -130,9 +130,9 @@ export async function analyzeViaBackend(
   });
 
   if (res.status === 403) {
+    // Keep the QUOTA_EXHAUSTED code so the drawer shows the upgrade screen
     throw new Error(
-      res.data?.message ||
-        'QUOTA_EXHAUSTED: You have used your free AI appraisal. Upgrade to Pro for unlimited deal analysis.'
+      `QUOTA_EXHAUSTED: ${res.data?.message || 'You have used your free AI appraisal. Upgrade to Pro for unlimited deal analysis.'}`
     );
   }
 
