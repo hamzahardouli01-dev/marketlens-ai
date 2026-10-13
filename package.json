@@ -1,13 +1,13 @@
 {
   "name": "carlisting-lens",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build-extension.mjs",
     "build:ext": "node scripts/build-extension.mjs",
-    "zip": "cd dist && zip -r ../marketlens-ai-v1.0.1.zip . && cp ../marketlens-ai-v1.0.1.zip ../marketlens-ai-v1.0.0.zip && echo '✅ marketlens-ai-v1.0.1.zip ready for Chrome Web Store'",
+    "zip": "cd dist && rm -f ../marketlens-ai-v$npm_package_version.zip && zip -qr ../marketlens-ai-v$npm_package_version.zip . -x '.*' && echo \"✅ marketlens-ai-v$npm_package_version.zip ready for Chrome Web Store\"",
     "release": "node scripts/build-extension.mjs && npm run zip",
     "test": "vitest run",
     "test:watch": "vitest",
