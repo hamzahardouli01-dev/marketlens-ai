@@ -85,9 +85,9 @@ Copy and paste directly from [STORE_DESCRIPTION.md](STORE_DESCRIPTION.md):
 - **Name:** comes from the extension package (`public/_locales/*/messages.json`) — `MarketLens: AI Deal Checker for Facebook Marketplace`, translated into 10 languages.
 - **Summary (132 chars):** also from the package —
   > Facebook Marketplace price checker & scam detector. See the fair price, spot red flags, check photos and send the right offer.
-- **Description:** *(Copy the full text from [STORE_DESCRIPTION.md](STORE_DESCRIPTION.md))*
+- **Description:** one ready-to-paste file per language in [`store-listing/`](store-listing/). Paste `en.txt` first, then choose each other language in the dropdown at the top of the Store listing page and paste its file. The language-to-file table is in [STORE_DESCRIPTION.md](STORE_DESCRIPTION.md), section 3.
 - **Category:** `Shopping` or `Productivity`
-- **Language:** `English`
+- **Language:** `English` (the default; the other languages are picked from the same dropdown)
 
 ### 4. Visual Graphic Assets
 Google requires a few images to display your extension in the store:

@@ -155,3 +155,25 @@ describe('Chrome store translations (_locales)', () => {
     });
   }
 });
+
+describe('Chrome Web Store descriptions (store-listing)', () => {
+  const dir = path.resolve(process.cwd(), 'store-listing');
+
+  for (const locale of LOCALES) {
+    it(`${locale}.txt is ready to paste`, () => {
+      const file = path.join(dir, `${locale}.txt`);
+      expect(fs.existsSync(file), file).toBe(true);
+      const text = fs.readFileSync(file, 'utf8');
+      const catalog = getCatalog(locale);
+
+      expect(text.length).toBeLessThanOrEqual(16000);
+      expect(text).toContain('Facebook Marketplace');
+      expect(text).toContain('Meta Platforms, Inc.');
+      // Never reveal the AI provider in store copy.
+      expect(text).not.toMatch(/gemini|google/i);
+      // The copy names the same buttons the user will see in the extension.
+      expect(text).toContain(catalog['fab.label']);
+      expect(text).toContain(catalog['badge.analyze']);
+    });
+  }
+});

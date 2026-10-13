@@ -1,0 +1,94 @@
+¿Esa oferta de Facebook Marketplace vale la pena? Descúbrelo con un clic, antes de escribirle al vendedor.
+
+MarketLens es un asistente de compras con IA que revisa los anuncios de Facebook Marketplace. Abre cualquier anuncio y verás al instante una puntuación de compra, el precio justo de segunda mano, las señales de estafa, una revisión del estado en las fotos y una contraoferta lista para enviar. Es la forma más fácil de no pagar de más, detectar anuncios falsos y negociar un mejor precio en artículos usados. También funciona en eBay.com, eBay.ca y Craigslist.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+LO QUE OBTIENES EN CADA ANUNCIO
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ PUNTUACIÓN DE COMPRA: ¿ES UNA BUENA OFERTA?
+Una puntuación clara de 0 a 100 y un veredicto (Comprar ya, Buena compra, Negocia primero, Precaución o Mejor no) con un resumen sencillo del porqué.
+
+✔ COMPROBADOR DE PRECIO JUSTO
+Compara el precio pedido con el rango de precio justo de segunda mano y con el precio original de venta, y mira cuánto está por encima o por debajo del valor de mercado. Se acabó adivinar cuánto vale algo o revisar anuncios vendidos uno por uno.
+
+✔ DETECTOR DE ESTAFAS Y SEÑALES DE ALERTA
+MarketLens detecta las señales típicas de las estafas en Marketplace: fotos de catálogo, precios demasiado buenos para ser verdad, presión para pagar antes de ver el artículo, descripciones vagas o copiadas y datos que faltan. Cada alerta se clasifica como crítica, aviso o nota.
+
+✔ REVISIÓN DEL ESTADO EN LAS FOTOS
+La IA revisa las fotos del anuncio en busca de rayones, golpes, pantallas rotas y desgaste, califica el estado (Como nuevo, Bueno, Aceptable o Malo), te dice si es una foto real del vendedor o una imagen de catálogo y enumera los accesorios que se ven.
+
+✔ CONTRAOFERTA Y AYUDA PARA NEGOCIAR
+Recibe una oferta sugerida según el valor de mercado, ajusta el importe, elige el estilo del mensaje (Amable, Directo o Recogida en efectivo) y copia un mensaje listo para enviar por Messenger.
+
+✔ PREGUNTAS PARA EL VENDEDOR
+Preguntas pensadas para cada artículo, como el estado de la batería, el comprobante de compra, la garantía, el motivo de la venta o los defectos visibles, para que sepas qué revisar antes de encontrarte con el vendedor.
+
+✔ VALOR DE REVENTA Y CALCULADORA DE GANANCIAS
+¿Compras para revender? Mira el valor de reventa estimado, tu ganancia o pérdida y lo rápido que se podría vender. Ideal para revendedores que buscan ofertas rentables.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+GUARDA, SIGUE Y COMPARA OFERTAS
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Guarda anuncios en tu lista con un clic
+✔ Avisos de bajada de precio: vuelve a un anuncio guardado y MarketLens te muestra cuánto ha bajado desde que lo guardaste
+✔ Comparación de precios lado a lado de hasta 5 artículos: precio, puntuación, valor justo, estado y riesgos
+✔ Sigue cada oferta como Siguiendo, Contactado, Negociando, Comprado o Descartado, con tus propias notas
+✔ Vuelve a abrir análisis anteriores al instante sin gastar otro
+✔ Busca, ordena y exporta tus ofertas guardadas a CSV
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+PENSADO PARA TU FORMA DE COMPRAR
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Una insignia "Analizar" en cada artículo de tu feed de Facebook Marketplace; los que ya revisaste muestran su puntuación ahí mismo
+✔ Botón "Analizar oferta" en cada página de anuncio
+✔ Atajo de teclado (Alt+Shift+M) y menú del botón derecho
+✔ Disponible en 10 idiomas: English, Español, Français, Deutsch, العربية, Português, 中文, हिन्दी, বাংলা y Русский. MarketLens usa automáticamente el idioma de tu Facebook o de tu navegador, y los análisis también te llegan en español.
+✔ Tema claro y oscuro
+
+Úsalo con celulares, laptops, consolas, televisores, muebles, electrodomésticos, bicicletas, herramientas, artículos para bebé, autos y casi cualquier cosa de segunda mano.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+CÓMO FUNCIONA
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Agrega MarketLens a Chrome y abre Facebook Marketplace.
+2. Abre un anuncio o haz clic en la insignia "Analizar" de cualquier artículo del feed.
+3. Recibe tu puntuación de compra, el precio justo, las señales de alerta y la contraoferta en la misma página.
+
+Sin cuenta y sin configuración.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+PRUÉBALO GRATIS
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tu primer análisis es gratis. Pásate a MarketLens Pro para tener análisis ilimitados, con pago mensual o anual. Cancela cuando quieras.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+PREGUNTAS FRECUENTES
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+¿Cómo saber si un anuncio de Facebook Marketplace es una estafa?
+Abre el anuncio y haz clic en "Analizar oferta". MarketLens compara el precio con el valor de mercado, revisa las fotos y la descripción en busca de las estafas más comunes y te muestra cada señal de alerta.
+
+¿Cuánto debo ofrecer en Facebook Marketplace?
+MarketLens te sugiere una oferta según el precio justo de segunda mano y el estado del artículo, y te escribe el mensaje en el estilo que elijas.
+
+¿Cómo sé cuánto vale un artículo usado?
+La revisión de precio te muestra el rango de precio habitual de segunda mano y el precio original, para que veas al instante si el precio pedido es justo.
+
+¿Funciona en eBay y Craigslist?
+Sí, en eBay.com, eBay.ca y Craigslist. Abre el anuncio y haz clic en "Analizar oferta". Otros sitios de eBay, como eBay.es, todavía no son compatibles.
+
+¿MarketLens lee mis mensajes o mi perfil?
+No. Nunca lee tus mensajes, tu perfil ni tu lista de amigos.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+PRIVACIDAD
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+Solo el anuncio que eliges analizar, incluidas sus fotos, se envía por una conexión segura a nuestro servidor para crear el análisis. MarketLens nunca lee tus mensajes, tu perfil ni tu lista de amigos, y nunca vendemos tus datos. Tus anuncios guardados y tus notas se quedan en tu dispositivo.
+
+MarketLens es una herramienta independiente. No está afiliada a Meta Platforms, Inc. ni cuenta con su respaldo o patrocinio. Facebook y Marketplace son marcas comerciales de Meta Platforms, Inc.
