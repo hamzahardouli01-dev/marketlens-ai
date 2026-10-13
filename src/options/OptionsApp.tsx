@@ -23,11 +23,33 @@ const STATUS_CLASS: Record<ListingStatus, string> = {
   archived: 'status-archived',
 };
 
-const FLAG_ICONS: Record<FlagCategory, string> = {
-  mechanical_concern: '🔧',
-  title_disclosure: '📋',
-  payment_ambiguity: '💰',
-  inspection_condition: '🔍',
+const FLAG_TONE: Record<FlagCategory, string> = {
+  mechanical_concern: 'var(--red)',
+  title_disclosure: 'var(--yellow)',
+  payment_ambiguity: 'var(--yellow)',
+  inspection_condition: 'var(--blue)',
+};
+
+function Icon({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+
+const ICONS = {
+  logo: 'M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0M21 21l-5-5M8 11l2 2 4-4',
+  external: 'M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6',
+  edit: 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
+  compare: 'M16 3h5v5M8 21H3v-5M21 3l-7 7M3 21l7-7',
+  check: 'M20 6 9 17l-5-5',
+  trash: 'M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
+  bookmark: 'm19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z',
+  search: 'M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0M21 21l-4.3-4.3',
+  back: 'm12 19-7-7 7-7M19 12H5',
+  x: 'M18 6 6 18M6 6l12 12',
+  pin: 'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
 };
 
 function vehicleLabel(s: SavedListing): string {
@@ -71,11 +93,11 @@ function EditModal({
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <h2>Edit: {vehicleLabel(listing)}</h2>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 14 }}>
+        <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginBottom: 18 }}>
           Your notes are kept separate from the extracted listing data.
         </p>
-        <div className="form-row" style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <div className="form-row" style={{ marginBottom: 14 }}>
+          <label className="form-label" htmlFor="edit-status">
             Status
           </label>
           <select
@@ -89,7 +111,7 @@ function EditModal({
           </select>
         </div>
         <div className="form-row">
-          <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <label className="form-label" htmlFor="edit-notes">
             Notes
           </label>
           <textarea
@@ -156,15 +178,21 @@ function SavedCard({
         )}
         {listing.data.transmission && <span className="tag">{listing.data.transmission}</span>}
         {listing.data.fuelType && <span className="tag">{listing.data.fuelType}</span>}
-        {listing.data.location && <span className="tag">📍 {listing.data.location}</span>}
-        {listing.data.isManual && <span className="tag" style={{ color: 'var(--accent)' }}>Manual entry</span>}
+        {listing.data.location && (
+          <span className="tag">
+            <span style={{ width: 12, height: 12, display: 'inline-flex' }}><Icon d={ICONS.pin} /></span>
+            {listing.data.location}
+          </span>
+        )}
+        {listing.data.isManual && <span className="tag">Manual entry</span>}
       </div>
 
       {flags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {flags.map((f, i) => (
-            <span key={i} className="tag" title={f.excerpt} style={{ cursor: 'help', fontSize: 11 }}>
-              {FLAG_ICONS[f.category]} {f.label}
+            <span key={i} className="tag" title={f.excerpt} style={{ cursor: 'help' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: FLAG_TONE[f.category] }} />
+              {f.label}
             </span>
           ))}
         </div>
@@ -176,7 +204,7 @@ function SavedCard({
 
       {listing.priceHistory.length > 1 && (
         <div className="price-history-row">
-          <span style={{ color: 'var(--text-muted)' }}>Price history:</span>
+          <span style={{ color: 'var(--text-muted)' }}>Price history</span>
           {listing.priceHistory.map((ph, i) => (
             <span key={i} className="price-history-item" title={new Date(ph.timestamp).toLocaleString()}>
               {ph.raw}
@@ -185,7 +213,7 @@ function SavedCard({
         </div>
       )}
 
-      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+      <div className="saved-card-date">
         Saved {new Date(listing.savedAt).toLocaleDateString()}
         {listing.updatedAt !== listing.savedAt && (
           <> · Updated {new Date(listing.updatedAt).toLocaleDateString()}</>
@@ -197,22 +225,32 @@ function SavedCard({
           href={listing.data.url}
           target="_blank"
           rel="noreferrer"
-          className="btn btn-ghost btn-sm"
+          className="btn btn-secondary btn-sm"
         >
-          ↗ View listing
+          <Icon d={ICONS.external} />
+          Open
         </a>
         <button className="btn btn-secondary btn-sm" onClick={onEdit} id={`edit-${listing.id}`}>
-          ✏ Edit
+          <Icon d={ICONS.edit} />
+          Edit
         </button>
         <button
           className={`btn btn-sm ${isSelectedForCompare ? 'btn-primary' : 'btn-secondary'}`}
           onClick={onToggleCompare}
           id={`compare-${listing.id}`}
+          aria-pressed={isSelectedForCompare}
         >
-          {isSelectedForCompare ? '✓ Comparing' : '⇄ Compare'}
+          <Icon d={isSelectedForCompare ? ICONS.check : ICONS.compare} />
+          {isSelectedForCompare ? 'Comparing' : 'Compare'}
         </button>
-        <button className="btn btn-danger btn-sm" onClick={onDelete} id={`delete-${listing.id}`}>
-          🗑
+        <button
+          className="btn btn-ghost btn-sm push-right"
+          onClick={onDelete}
+          id={`delete-${listing.id}`}
+          title="Delete listing"
+          aria-label="Delete listing"
+        >
+          <Icon d={ICONS.trash} />
         </button>
       </div>
     </div>
@@ -270,8 +308,8 @@ function CompareTable({ listings }: { listings: SavedListing[] }) {
               <th key={s.id} className="vehicle-header">
                 {vehicleLabel(s)}
                 <div style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)', marginTop: 2 }}>
-                  <a href={s.data.url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>
-                    View listing ↗
+                  <a href={s.data.url} target="_blank" rel="noreferrer">
+                    View listing
                   </a>
                 </div>
               </th>
@@ -377,10 +415,10 @@ export default function OptionsApp() {
       {/* Header */}
       <div className="options-header">
         <div className="options-logo">
-          <div className="options-logo-icon">✨</div>
+          <div className="options-logo-icon"><Icon d={ICONS.logo} /></div>
           <div>
             <h1>MarketLens AI</h1>
-            <span>Saved Listings & Comparisons</span>
+            <span>Saved listings</span>
           </div>
         </div>
         <div className="options-nav">
@@ -389,7 +427,7 @@ export default function OptionsApp() {
             onClick={() => setView('saved')}
             id="nav-saved"
           >
-            Saved ({listings.length})
+            Saved{listings.length > 0 ? ` · ${listings.length}` : ''}
           </button>
           <button
             className={`options-nav-btn ${view === 'compare' ? 'active' : ''}`}
@@ -397,7 +435,7 @@ export default function OptionsApp() {
             id="nav-compare"
             disabled={compareIds.size < 2}
           >
-            Compare {compareIds.size >= 2 ? `(${compareIds.size})` : ''}
+            Compare{compareIds.size >= 2 ? ` · ${compareIds.size}` : ''}
           </button>
         </div>
       </div>
@@ -411,7 +449,7 @@ export default function OptionsApp() {
                 <input
                   className="search-input"
                   type="search"
-                  placeholder="Search saved vehicles…"
+                  placeholder="Search saved listings…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   id="search-saved"
@@ -427,7 +465,8 @@ export default function OptionsApp() {
                     onClick={() => setView('compare')}
                     id="go-compare-btn"
                   >
-                    ⇄ Compare {compareIds.size} vehicles
+                    <Icon d={ICONS.compare} />
+                    Compare {compareIds.size} listings
                   </button>
                 )}
               </div>
@@ -443,19 +482,19 @@ export default function OptionsApp() {
 
           {!loading && listings.length === 0 && (
             <div className="empty-state">
-              <div className="icon">🚗</div>
+              <div className="icon"><Icon d={ICONS.bookmark} /></div>
               <h2>No saved listings yet</h2>
               <p>
-                Open the extension on a Facebook Marketplace vehicle listing and click
-                "Analyze this listing," then save it here.
+                Listings you save appear here, where you can track their status, keep notes and
+                compare up to five side by side.
               </p>
             </div>
           )}
 
           {!loading && filtered.length === 0 && listings.length > 0 && (
             <div className="empty-state">
-              <div className="icon">🔎</div>
-              <p>No listings match your search.</p>
+              <div className="icon"><Icon d={ICONS.search} /></div>
+              <p>No listings match “{search}”.</p>
               <button className="btn btn-ghost btn-sm" onClick={() => setSearch('')}>
                 Clear search
               </button>
@@ -482,7 +521,7 @@ export default function OptionsApp() {
               <div className="divider" />
               <div className="danger-zone">
                 <div>
-                  <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>
+                  <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
                     Delete all saved data
                   </p>
                   <p>This permanently removes all {listings.length} saved listing(s) from local storage.</p>
@@ -518,10 +557,11 @@ export default function OptionsApp() {
           <div className="page-toolbar">
             <div className="toolbar-left">
               <h2>Side-by-side comparison</h2>
-              <span className="tag">{compareListings.length} vehicles</span>
+              <span className="tag">{compareListings.length} listings</span>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setView('saved')}>
-              ← Back to saved
+              <Icon d={ICONS.back} />
+              Back to saved
             </button>
           </div>
 
@@ -529,14 +569,13 @@ export default function OptionsApp() {
             <div className="empty-state">
               <p>Select 2–5 saved listings to compare.</p>
               <button className="btn btn-primary btn-sm" onClick={() => setView('saved')}>
-                ← Go to saved listings
+                Go to saved listings
               </button>
             </div>
           ) : (
             <>
               <div className="alert alert-info" style={{ marginBottom: 14, fontSize: 12 }}>
-                ℹ Mileage values are shown in their original units. Prices are not ranked across
-                currencies — no exchange rates are applied.
+                Mileage is shown in its original units. Prices aren’t converted between currencies.
               </div>
               <CompareTable listings={compareListings} />
               <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -547,7 +586,8 @@ export default function OptionsApp() {
                     onClick={() => toggleCompare(s.id)}
                     id={`remove-compare-${s.id}`}
                   >
-                    ✕ Remove {vehicleLabel(s)}
+                    <Icon d={ICONS.x} />
+                    Remove {vehicleLabel(s)}
                   </button>
                 ))}
               </div>

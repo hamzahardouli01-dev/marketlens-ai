@@ -5,14 +5,14 @@
   flex-direction: column;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px 40px;
+  padding: 0 24px 48px;
 }
 
 .options-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 0 16px;
+  padding: 20px 0;
   border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 24px;
   flex-wrap: wrap;
@@ -26,21 +26,21 @@
 }
 
 .options-logo-icon {
-  width: 38px;
-  height: 38px;
-  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
-  border-radius: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 19px;
-  box-shadow: 0 4px 14px var(--accent-soft), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  animation: float 4.5s ease-in-out infinite;
+  width: 34px;
+  height: 34px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex: none;
 }
 
+.options-logo-icon svg { width: 18px; height: 18px; }
+
 .options-logo h1 {
-  font-size: 19px;
-  letter-spacing: -0.02em;
+  font-size: 17px;
+  letter-spacing: -0.015em;
 }
 
 .options-logo span {
@@ -51,30 +51,31 @@
 
 .options-nav {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   background: var(--bg-raised);
   border: 1px solid var(--border-subtle);
-  padding: 4px;
-  border-radius: 99px;
+  padding: 3px;
+  border-radius: 10px;
 }
 
 .options-nav-btn {
-  padding: 7px 16px;
+  height: 30px;
+  padding: 0 14px;
   border: none;
-  border-radius: 99px;
+  border-radius: 7px;
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.18s var(--ease-out);
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .options-nav-btn.active {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-  color: #fff;
-  box-shadow: 0 3px 10px var(--accent-soft);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--border-subtle);
 }
 
 .options-nav-btn:hover:not(.active):not(:disabled) {
@@ -101,16 +102,14 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s var(--ease-out);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   opacity: 0;
-  animation: fadeUp 0.5s var(--ease-out) forwards;
-  animation-delay: calc(var(--i, 0) * 60ms);
+  animation: fadeUp 0.35s var(--ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 40ms);
 }
 
 .saved-card:hover {
   border-color: var(--border);
-  box-shadow: var(--shadow);
-  transform: translateY(-2px);
 }
 
 .saved-card.selected-for-compare {
@@ -145,11 +144,11 @@
 }
 
 .saved-card-price {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 650;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  color: var(--green);
+  color: var(--text-primary);
 }
 
 .saved-card-price.unclear {
@@ -158,20 +157,29 @@
 }
 
 .saved-card-notes {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-secondary);
   background: var(--bg-raised);
   border-radius: var(--radius-sm);
-  padding: 6px 8px;
-  font-style: italic;
-  border-left: 2px solid var(--accent);
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+}
+
+.saved-card-date {
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
 
 .saved-card-actions {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  padding-top: 12px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border-subtle);
 }
+
+.saved-card-actions .push-right { margin-left: auto; }
 
 .price-history-row {
   display: flex;
@@ -191,6 +199,7 @@
 /* ── Compare Table ── */
 .compare-container {
   overflow-x: auto;
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
 }
@@ -216,7 +225,7 @@
 }
 
 .compare-table th.vehicle-header {
-  background: var(--bg-raised);
+  background: var(--bg-surface);
   color: var(--text-primary);
   font-size: 13px;
   text-transform: none;
@@ -255,10 +264,14 @@
 }
 
 .compare-price {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--green);
+  font-size: 15px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
+
+.compare-table a { color: var(--accent-text); text-decoration: none; }
+.compare-table a:hover { text-decoration: underline; }
 
 .compare-table .flag-mini {
   display: flex;
@@ -270,15 +283,26 @@
 
 /* ── Status badges ── */
 .status-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 2px 8px;
   border-radius: 20px;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .status-interested { background: var(--blue-soft); color: var(--blue); }
-.status-contacted { background: var(--accent-soft); color: var(--accent); }
+.status-contacted { background: var(--yellow-soft); color: var(--yellow); }
 .status-viewing_scheduled { background: var(--green-soft); color: var(--green); }
 .status-archived { background: var(--bg-raised); color: var(--text-muted); }
 
@@ -300,9 +324,10 @@
 }
 
 .search-input {
-  width: 220px;
-  padding: 7px 12px;
-  background: var(--bg-raised);
+  width: 260px;
+  height: 34px;
+  padding: 0 12px;
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -313,14 +338,14 @@
 .search-input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 /* ── Edit modal overlay ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(4, 6, 12, 0.65);
-  backdrop-filter: blur(6px);
+  background: rgba(8, 10, 14, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -333,15 +358,23 @@
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 24px;
   width: 100%;
   max-width: 480px;
   box-shadow: var(--shadow);
-  animation: popIn 0.3s var(--ease-spring);
+  animation: popIn 0.2s var(--ease-out);
 }
 
 .modal h2 {
-  margin-bottom: 16px;
+  margin-bottom: 4px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .modal-actions {
@@ -371,8 +404,8 @@
 
 /* ── Danger zone ── */
 .danger-zone {
-  border: 1px solid rgba(248, 113, 113, 0.22);
-  background: rgba(248, 113, 113, 0.05);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
   border-radius: var(--radius);
   padding: 14px;
   display: flex;

@@ -41,31 +41,31 @@ export const ACCENT_PALETTES: Record<
     primary: '#0866FF',
     hover: '#1877F2',
     soft: 'rgba(8, 102, 255, 0.15)',
-    name: 'Facebook Blue',
+    name: 'Blue',
   },
   green: {
     primary: '#10B981',
     hover: '#059669',
     soft: 'rgba(16, 185, 129, 0.15)',
-    name: 'Emerald Flip',
+    name: 'Green',
   },
   purple: {
     primary: '#8B5CF6',
     hover: '#7C3AED',
     soft: 'rgba(139, 92, 246, 0.15)',
-    name: 'Electric Violet',
+    name: 'Violet',
   },
   amber: {
     primary: '#F59E0B',
     hover: '#D97706',
     soft: 'rgba(245, 158, 11, 0.15)',
-    name: 'Cyber Amber',
+    name: 'Amber',
   },
   red: {
     primary: '#EF4444',
     hover: '#DC2626',
     soft: 'rgba(239, 68, 68, 0.15)',
-    name: 'Crimson Deal',
+    name: 'Red',
   },
 };
 
