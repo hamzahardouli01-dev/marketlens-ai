@@ -42,10 +42,32 @@ import {
   type AccentColor,
 } from '../services/settings';
 import { buildInpageStyles } from './inpageStyles';
+import {
+  LOCALES,
+  LOCALE_INFO,
+  PAGE_LOCALE_KEY,
+  detectAutoLocale,
+  detectLocale,
+  getDir,
+  getLocale,
+  intlLocale,
+  setLocale,
+  t,
+  tn,
+  type LanguagePreference,
+} from '../i18n';
 import { icon, type IconName } from './icons';
 import { buildPriceScale, esc, money, timeAgo } from '../utils/format';
 import { listingKey } from '../utils/listing';
-import { OFFER_TONES, buildDealSummary, buildOfferMessage, offerStep, shortItemName, type OfferTone } from '../utils/dealText';
+import {
+  OFFER_TONES,
+  buildDealSummary,
+  buildOfferMessage,
+  offerStep,
+  offerToneLabel,
+  shortItemName,
+  type OfferTone,
+} from '../utils/dealText';
 import {
   ANALYSIS_CACHE_KEY,
   buildAnalysisIndex,
@@ -85,6 +107,44 @@ let latestAnalysis: {
 let reanalyzeAction: (() => void) | null = null;
 /** Buy score per listing key from the analysis history, for feed badges. */
 let analysisIndex: Record<string, AnalysisIndexEntry> = {};
+/** Re-renders the drawer's current screen (used when the language changes). */
+let rerenderCurrentView: (() => void) | null = null;
+let lastStoredPageLocale: string | null = null;
+
+// ─── Language ─────────────────────────────────────────────────────────────────
+
+/** Pick the UI language: Settings choice, then page language, then browser. Returns true if it changed. */
+function refreshLocale(): boolean {
+  const changed = setLocale(
+    detectLocale({
+      preference: currentPrefs.language,
+      pageLang: document.documentElement?.lang,
+      browserLangs: navigator.languages ?? [navigator.language],
+    })
+  );
+  // Remember the language of the marketplace page so the Saved page can match it
+  const detected = detectAutoLocale();
+  if (detected !== lastStoredPageLocale) {
+    lastStoredPageLocale = detected;
+    try {
+      chrome.storage.local.set({ [PAGE_LOCALE_KEY]: detected });
+    } catch {}
+  }
+  return changed;
+}
+
+/** Re-apply text after a language change: launchers, badges and the open drawer. */
+function applyLocaleToUi(): void {
+  const btn = document.getElementById(BTN_ID);
+  if (btn) btn.remove(); // recreated with new text and side by checkAndInject
+  refreshCardBadges();
+  checkAndInject();
+  const modal = document.getElementById(MODAL_ID);
+  if (modal && modal.style.display === 'flex') {
+    createModalBase(false);
+    rerenderCurrentView?.();
+  }
+}
 /** Re-runs whatever produced the current error screen (listing page or feed card). */
 let retryLastAction: (() => void) | null = null;
 
@@ -120,6 +180,7 @@ async function checkStripeRedirectReturn(): Promise<void> {
 
 export function initInpageWidget(): void {
   injectStyles();
+  refreshLocale();
 
   // Load subscription and background sync with server
   getUserSubscription().then((sub) => {
@@ -147,6 +208,7 @@ export function initInpageWidget(): void {
   // Load preferences
   getPreferences().then((prefs) => {
     currentPrefs = prefs;
+    if (refreshLocale()) applyLocaleToUi();
     applyTheme();
     checkAndInject();
   });
@@ -158,6 +220,7 @@ export function initInpageWidget(): void {
         const val = changes['marketlens_preferences'].newValue;
         if (val && typeof val === 'object') {
           currentPrefs = { ...DEFAULT_PREFERENCES, ...(val as Partial<UserPreferences>) };
+          if (refreshLocale()) applyLocaleToUi();
           applyTheme();
           checkAndInject();
         }
@@ -257,13 +320,13 @@ const SCORE_FROM_RATING: Record<string, number> = {
 
 type Tone = 'positive' | 'warning' | 'danger' | 'info' | 'accent';
 
-const VERDICT_BADGE: Record<BuyVerdict | 'unknown', { text: string; tone: Tone }> = {
-  buy_now: { text: 'Buy now', tone: 'positive' },
-  good_buy: { text: 'Good buy', tone: 'positive' },
-  negotiate: { text: 'Negotiate first', tone: 'warning' },
-  caution: { text: 'Caution', tone: 'warning' },
-  walk_away: { text: 'Walk away', tone: 'danger' },
-  unknown: { text: 'Appraisal', tone: 'info' },
+const VERDICT_TONE: Record<BuyVerdict | 'unknown', Tone> = {
+  buy_now: 'positive',
+  good_buy: 'positive',
+  negotiate: 'warning',
+  caution: 'warning',
+  walk_away: 'danger',
+  unknown: 'info',
 };
 
 const CONDITION_TONE: Record<string, Tone> = {
@@ -290,14 +353,35 @@ function sampleListingContext(): UniversalListingContext {
     title: DEMO_ANALYSIS.identifiedProduct.name,
     priceRaw: money(DEMO_ANALYSIS.pricing.askingPrice),
     currency: 'USD',
-    description: 'Sample listing used to preview a MarketLens analysis.',
+    description: '',
     imageUrl: '',
+  };
+}
+
+/** The sample analysis with its text in the active language. */
+function localizedSampleAnalysis(): AIProductAnalysis {
+  const d = DEMO_ANALYSIS;
+  return {
+    ...d,
+    buyVerdictLabel: t('demo.verdictLabel'),
+    aiSummary: t('demo.summary'),
+    redFlags: [{ severity: 'info', text: t('demo.flag') }],
+    questionsToAsk: [t('demo.q1'), t('demo.q2'), t('demo.q3')],
+    identifiedProduct: { ...d.identifiedProduct, category: t('demo.category'), conditionReport: t('demo.condition') },
+    pricing: { ...d.pricing, dealVerdictLabel: t('demo.verdictLabel') },
+    flipPotential: { ...d.flipPotential, flipSummary: t('demo.flipSummary'), resaleTimeframe: t('demo.timeframe') },
+    visualAudit: {
+      ...d.visualAudit,
+      detectedFlawsOrWear: [t('demo.obs1'), t('demo.obs2'), t('demo.obs3')],
+      accessoriesVisible: [t('demo.inc1'), t('demo.inc2'), t('demo.inc3')],
+    },
+    negotiation: { ...d.negotiation, counterOfferMessage: t('demo.offerMsg') },
   };
 }
 
 function showSampleAnalysis(): void {
   activeDrawerTab = 'appraisal';
-  renderInpageResults(DEMO_ANALYSIS, sampleListingContext(), true);
+  renderInpageResults(localizedSampleAnalysis(), sampleListingContext(), true);
 }
 
 // ─── Auto-Analyze on Listing Open ───────────────────────────────────────────
@@ -374,9 +458,11 @@ function checkAndInjectDetailButton(): void {
 
   const btn = document.createElement('button');
   btn.id = BTN_ID;
-  btn.innerHTML = `${icon('sparkles', 18)}<span>Analyze deal</span>`;
-  btn.title = 'Analyze this listing with MarketLens AI';
-  btn.setAttribute('aria-label', 'Analyze this listing with MarketLens AI');
+  btn.innerHTML = `${icon('sparkles', 18)}<span>${esc(t('fab.label'))}</span>`;
+  btn.title = t('fab.title');
+  btn.setAttribute('aria-label', t('fab.title'));
+  btn.lang = getLocale();
+  btn.classList.toggle('is-rtl', getDir() === 'rtl');
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -433,7 +519,7 @@ function injectGridCardBadges(): void {
           localStorage.setItem('marketlens_auto_analyze', Date.now().toString());
         } catch {}
 
-        badge.innerHTML = `<span>Opening…</span>`;
+        badge.innerHTML = `<span>${esc(t('badge.opening'))}</span>`;
 
         if (e.metaKey || e.ctrlKey) {
           window.open(card.href, '_blank');
@@ -451,16 +537,18 @@ function injectGridCardBadges(): void {
 
 function renderCardBadge(badge: HTMLElement): void {
   const entry = analysisIndex[badge.dataset.mlKey || ''];
+  badge.lang = getLocale();
+  badge.classList.toggle('is-rtl', getDir() === 'rtl');
   if (entry && entry.score !== null) {
     badge.classList.add('has-score');
     badge.dataset.tone = scoreTone(entry.score);
     badge.innerHTML = `<span class="ml-badge-dot"></span><span>${entry.score}</span>`;
-    badge.title = `MarketLens buy score ${entry.score}/100 — click to view`;
+    badge.title = t('badge.scoreTitle', { score: entry.score });
   } else {
     badge.classList.remove('has-score');
     delete badge.dataset.tone;
-    badge.innerHTML = `${icon('sparkles', 13)}<span>Analyze</span>`;
-    badge.title = 'Analyze this listing with MarketLens AI';
+    badge.innerHTML = `${icon('sparkles', 13)}<span>${esc(t('badge.analyze'))}</span>`;
+    badge.title = t('fab.title');
   }
 }
 
@@ -675,7 +763,7 @@ function showPriceChangeNotice(change: PriceChange): void {
   slot.innerHTML = `
     <div class="ml-notice tone-${dropped ? 'positive' : 'warning'}">
       ${icon(dropped ? 'trendingDown' : 'trendingUp')}
-      <div><strong>Price ${dropped ? 'dropped' : 'went up'} ${esc(money(Math.abs(change.delta)))}</strong> since you saved it — was ${esc(money(change.from))}, now ${esc(money(change.to))}.</div>
+      <div>${esc(t(dropped ? 'results.priceDropped' : 'results.priceRose', { amount: money(Math.abs(change.delta)), from: money(change.from), to: money(change.to) }))}</div>
     </div>
   `;
 }
@@ -687,47 +775,34 @@ function renderNoListingGuide(): void {
   const url = window.location.href;
   const isMarketplaceSite = url.includes('facebook.com') || url.includes('ebay.') || url.includes('craigslist.');
 
+  rerenderCurrentView = renderNoListingGuide;
+  const step = (n: number, title: string, desc: string) => `
+        <li class="ml-step">
+          <span class="ml-step-num">${n}</span>
+          <div>
+            <div class="ml-step-title">${esc(title)}</div>
+            <div class="ml-step-desc">${esc(desc)}</div>
+          </div>
+        </li>`;
+  const keys = `<bdi class="ml-kbd-group" dir="ltr"><kbd class="ml-kbd">Alt</kbd><kbd class="ml-kbd">Shift</kbd><kbd class="ml-kbd">M</kbd></bdi>`;
+
   body.innerHTML = `
     <div class="ml-empty ml-no-listing-container ml-stagger">
       <div class="ml-empty-icon">${icon('search', 22)}</div>
-      <h2 class="ml-empty-title">Open a listing to analyze it</h2>
-      <p class="ml-empty-sub">
-        ${
-          isMarketplaceSite
-            ? 'You’re browsing a feed or search results. Open an individual item and MarketLens will analyze it automatically.'
-            : 'MarketLens analyzes items on Facebook Marketplace, eBay and Craigslist. Open any item listing to get a price check and risk review.'
-        }
-      </p>
+      <h2 class="ml-empty-title">${esc(t('guide.title'))}</h2>
+      <p class="ml-empty-sub">${esc(t(isMarketplaceSite ? 'guide.subFeed' : 'guide.subOther'))}</p>
 
       <ol class="ml-steps">
-        <li class="ml-step">
-          <span class="ml-step-num">1</span>
-          <div>
-            <div class="ml-step-title">Open an item listing</div>
-            <div class="ml-step-desc">Select any item to view its full details and photos.</div>
-          </div>
-        </li>
-        <li class="ml-step">
-          <span class="ml-step-num">2</span>
-          <div>
-            <div class="ml-step-title">Or use the Analyze badge</div>
-            <div class="ml-step-desc">On Facebook Marketplace, each item card in the feed has an Analyze badge.</div>
-          </div>
-        </li>
-        <li class="ml-step">
-          <span class="ml-step-num">3</span>
-          <div>
-            <div class="ml-step-title">Review the verdict</div>
-            <div class="ml-step-desc">See the fair price, risk signals, photo condition and a ready-to-send offer.</div>
-          </div>
-        </li>
+        ${step(1, t('guide.step1Title'), t('guide.step1Desc'))}
+        ${step(2, t('guide.step2Title'), t('guide.step2Desc'))}
+        ${step(3, t('guide.step3Title'), t('guide.step3Desc'))}
       </ol>
 
       <div class="ml-empty-actions">
-        <button class="ml-btn ml-btn-secondary is-block" id="ml-preview-demo-trigger">View a sample analysis</button>
+        <button class="ml-btn ml-btn-secondary is-block" id="ml-preview-demo-trigger">${esc(t('common.viewSample'))}</button>
       </div>
-      <p class="ml-supported">Works on Facebook Marketplace, eBay and Craigslist</p>
-      <p class="ml-supported ml-tip">${icon('keyboard', 14)}<span>Tip: press <kbd class="ml-kbd">Alt</kbd> <kbd class="ml-kbd">Shift</kbd> <kbd class="ml-kbd">M</kbd> to open MarketLens</span></p>
+      <p class="ml-supported">${esc(t('guide.supported'))}</p>
+      <p class="ml-supported ml-tip">${icon('keyboard', 14)}<span>${esc(t('guide.tip')).replace('{keys}', keys)}</span></p>
     </div>
   `;
 
@@ -750,10 +825,10 @@ function loadingMarkup(): string {
   return `
     <div class="ml-loading" aria-live="polite">
       <div class="ml-loading-status">
-        <span class="ml-spinner" role="status" aria-label="Loading"></span>
+        <span class="ml-spinner" role="status" aria-label="${esc(t('common.loading'))}"></span>
         <div>
-          <p class="ml-loading-title">Analyzing this listing…</p>
-          <p class="ml-loading-sub">Checking market prices, photos and risk signals.</p>
+          <p class="ml-loading-title">${esc(t('loading.title'))}</p>
+          <p class="ml-loading-sub">${esc(t('loading.sub'))}</p>
         </div>
       </div>
     </div>
@@ -796,7 +871,10 @@ function createModalBase(showLoading: boolean = true): void {
 
   modal.setAttribute('data-theme', isDark ? 'dark' : 'light');
   modal.setAttribute('data-accent', currentPrefs.accentColor);
+  modal.setAttribute('lang', getLocale());
+  modal.setAttribute('dir', getDir());
   modal.style.display = 'flex';
+  if (showLoading) rerenderCurrentView = null;
 
   modal.innerHTML = `
     <div class="ml-overlay">
@@ -808,9 +886,9 @@ function createModalBase(showLoading: boolean = true): void {
           </div>
           <div class="ml-header-actions">
             <button class="ml-plan-pill" id="ml-header-pro-pill"></button>
-            <button class="ml-icon-btn" id="ml-open-saved" title="Saved listings" aria-label="Saved listings">${icon('bookmark', 17)}</button>
-            <button class="ml-icon-btn ${activeDrawerTab === 'settings' ? 'active' : ''}" id="ml-modal-settings" title="Settings" aria-label="Settings">${icon('sliders', 17)}</button>
-            <button class="ml-icon-btn" id="ml-modal-close" title="Close" aria-label="Close">${icon('x', 18)}</button>
+            <button class="ml-icon-btn" id="ml-open-saved" title="${esc(t('header.saved'))}" aria-label="${esc(t('header.saved'))}">${icon('bookmark', 17)}</button>
+            <button class="ml-icon-btn ${activeDrawerTab === 'settings' ? 'active' : ''}" id="ml-modal-settings" title="${esc(t('header.settings'))}" aria-label="${esc(t('header.settings'))}">${icon('sliders', 17)}</button>
+            <button class="ml-icon-btn" id="ml-modal-close" title="${esc(t('header.close'))}" aria-label="${esc(t('header.close'))}">${icon('x', 18)}</button>
           </div>
         </header>
 
@@ -869,8 +947,8 @@ function updateDrawerProPill(): void {
 
   if (currentUserSub?.isPro) {
     pill.className = 'ml-plan-pill is-pro';
-    pill.innerHTML = `${icon('gem', 13)}<span>Pro</span>`;
-    pill.title = 'MarketLens Pro — manage your plan';
+    pill.innerHTML = `${icon('gem', 13)}<span>${esc(t('plan.pro'))}</span>`;
+    pill.title = t('plan.proTitle');
     pill.onclick = () => {
       activeDrawerTab = 'settings';
       renderInpageSettings();
@@ -880,9 +958,9 @@ function updateDrawerProPill(): void {
     pill.className = 'ml-plan-pill';
     pill.innerHTML =
       remaining > 0
-        ? `<span>${remaining} free left</span>`
-        : `${icon('gem', 13)}<span class="ml-pill-upgrade">Upgrade</span>`;
-    pill.title = 'Upgrade to MarketLens Pro';
+        ? `<span>${esc(tn('plan.freeLeft', remaining))}</span>`
+        : `${icon('gem', 13)}<span class="ml-pill-upgrade">${esc(t('plan.upgrade'))}</span>`;
+    pill.title = t('plan.upgradeTitle');
     pill.onclick = () => {
       renderInpagePaywall();
     };
@@ -890,46 +968,46 @@ function updateDrawerProPill(): void {
 }
 
 function checkoutLabel(): string {
-  return `Continue with ${currentSelectedPlan === 'annual' ? 'annual — $69/year' : 'monthly — $9.99/month'}`;
+  return t(currentSelectedPlan === 'annual' ? 'paywall.continueAnnual' : 'paywall.continueMonthly');
 }
 
 function renderInpagePaywall(): void {
   const body = document.getElementById('ml-drawer-body');
   if (!body) return;
   activeDrawerTab = 'appraisal';
+  rerenderCurrentView = renderInpagePaywall;
   setSettingsButtonActive(false);
 
   const remaining = currentUserSub?.freeAppraisalsRemaining ?? 0;
-  const subCopy =
-    remaining > 0
-      ? `You have ${remaining} free ${remaining === 1 ? 'analysis' : 'analyses'} left. Pro removes the limit so you can check every listing before you buy.`
-      : 'You’ve used your free analysis. Upgrade to keep checking prices, photos and risk signals on every listing.';
+  const subCopy = remaining > 0 ? tn('paywall.subRemaining', remaining) : t('paywall.subNone');
+  const feature = (title: string, desc: string) =>
+    `<li>${icon('check')}<div><strong>${esc(title)}</strong><span>${esc(desc)}</span></div></li>`;
 
   body.innerHTML = `
     <div class="ml-section ml-stagger">
-      <span class="ml-eyebrow">${icon('gem')}MarketLens Pro</span>
-      <h2 class="ml-paywall-title">Unlimited deal analysis</h2>
-      <p class="ml-paywall-sub">${subCopy}</p>
+      <span class="ml-eyebrow">${icon('gem')}${esc(t('paywall.eyebrow'))}</span>
+      <h2 class="ml-paywall-title">${esc(t('paywall.title'))}</h2>
+      <p class="ml-paywall-sub">${esc(subCopy)}</p>
 
-      <div class="ml-plans" role="radiogroup" aria-label="Billing period">
+      <div class="ml-plans" role="radiogroup" aria-label="${esc(t('paywall.billingPeriod'))}">
         <button class="ml-plan ${currentSelectedPlan === 'annual' ? 'active' : ''}" id="ml-plan-annual" role="radio" aria-checked="${currentSelectedPlan === 'annual'}">
-          <span class="ml-plan-save">Save 42%</span>
-          <span class="ml-plan-top"><span class="ml-plan-name">Annual</span><span class="ml-plan-radio"></span></span>
-          <span class="ml-plan-price">$5.75<small> /mo</small></span>
-          <span class="ml-plan-note">$69 billed yearly</span>
+          <span class="ml-plan-save">${esc(t('paywall.saveBadge'))}</span>
+          <span class="ml-plan-top"><span class="ml-plan-name">${esc(t('paywall.annual'))}</span><span class="ml-plan-radio"></span></span>
+          <span class="ml-plan-price"><bdi>$5.75</bdi><small> ${esc(t('paywall.perMonth'))}</small></span>
+          <span class="ml-plan-note">${esc(t('paywall.billedYearly'))}</span>
         </button>
         <button class="ml-plan ${currentSelectedPlan === 'monthly' ? 'active' : ''}" id="ml-plan-monthly" role="radio" aria-checked="${currentSelectedPlan === 'monthly'}">
-          <span class="ml-plan-top"><span class="ml-plan-name">Monthly</span><span class="ml-plan-radio"></span></span>
-          <span class="ml-plan-price">$9.99<small> /mo</small></span>
-          <span class="ml-plan-note">Cancel anytime</span>
+          <span class="ml-plan-top"><span class="ml-plan-name">${esc(t('paywall.monthly'))}</span><span class="ml-plan-radio"></span></span>
+          <span class="ml-plan-price"><bdi>$9.99</bdi><small> ${esc(t('paywall.perMonth'))}</small></span>
+          <span class="ml-plan-note">${esc(t('paywall.cancelAnytime'))}</span>
         </button>
       </div>
 
       <ul class="ml-features">
-        <li>${icon('check')}<div><strong>Unlimited analyses</strong> on Facebook Marketplace, eBay and Craigslist</div></li>
-        <li>${icon('check')}<div><strong>Photo inspection</strong> for wear, damage and stock images</div></li>
-        <li>${icon('check')}<div><strong>Live market pricing</strong> from recent secondhand sales</div></li>
-        <li>${icon('check')}<div><strong>Ready-to-send offers</strong> and questions for the seller</div></li>
+        ${feature(t('paywall.f1Title'), t('paywall.f1Desc'))}
+        ${feature(t('paywall.f2Title'), t('paywall.f2Desc'))}
+        ${feature(t('paywall.f3Title'), t('paywall.f3Desc'))}
+        ${feature(t('paywall.f4Title'), t('paywall.f4Desc'))}
       </ul>
 
       <div id="ml-paywall-action-slot">
@@ -937,11 +1015,11 @@ function renderInpagePaywall(): void {
         <button class="ml-btn ml-btn-primary is-block" id="ml-inpage-checkout-btn">${esc(checkoutLabel())}</button>
       </div>
 
-      <p class="ml-fineprint">${icon('lock')}Secure checkout with Stripe · Cancel anytime</p>
+      <p class="ml-fineprint">${icon('lock')}${esc(t('paywall.secure'))}</p>
     </div>
 
     <div class="ml-center">
-      <button class="ml-btn ml-btn-link" id="ml-inpage-demo-preview">View a sample analysis</button>
+      <button class="ml-btn ml-btn-link" id="ml-inpage-demo-preview">${esc(t('common.viewSample'))}</button>
     </div>
   `;
 
@@ -961,7 +1039,7 @@ function renderInpagePaywall(): void {
     const actionSlot = document.getElementById('ml-paywall-action-slot');
 
     if (btn) {
-      btn.textContent = 'Opening secure checkout…';
+      btn.textContent = t('paywall.opening');
       btn.disabled = true;
     }
     if (errContainer) errContainer.style.display = 'none';
@@ -976,11 +1054,11 @@ function renderInpagePaywall(): void {
             <div class="ml-awaiting-head">
               <span class="ml-spinner"></span>
               <div>
-                <div class="ml-awaiting-title">Waiting for payment</div>
-                <div class="ml-awaiting-sub">Finish checkout in the Stripe tab. Pro activates here automatically once payment is confirmed.</div>
+                <div class="ml-awaiting-title">${esc(t('paywall.waitingTitle'))}</div>
+                <div class="ml-awaiting-sub">${esc(t('paywall.waitingSub'))}</div>
               </div>
             </div>
-            <button class="ml-btn ml-btn-secondary is-block" id="ml-confirm-payment-btn">I’ve completed payment</button>
+            <button class="ml-btn ml-btn-secondary is-block" id="ml-confirm-payment-btn">${esc(t('paywall.completed'))}</button>
           </div>
         `;
 
@@ -989,7 +1067,7 @@ function renderInpagePaywall(): void {
         const checkPaymentCompletion = async () => {
           const confirmBtn = document.getElementById('ml-confirm-payment-btn') as HTMLButtonElement | null;
           if (confirmBtn) {
-            confirmBtn.textContent = 'Checking with Stripe…';
+            confirmBtn.textContent = t('paywall.checking');
             confirmBtn.disabled = true;
           }
 
@@ -1000,7 +1078,7 @@ function renderInpagePaywall(): void {
             updateDrawerProPill();
             renderProActivatedSuccess();
           } else if (confirmBtn) {
-            confirmBtn.textContent = 'Payment not confirmed yet — check again';
+            confirmBtn.textContent = t('paywall.notYet');
             confirmBtn.disabled = false;
           }
         };
@@ -1048,7 +1126,7 @@ function renderInpagePaywall(): void {
         btn.disabled = false;
       }
       if (errContainer) {
-        errContainer.innerHTML = `<div class="ml-notice tone-danger ml-checkout-err">${icon('alert')}<span>${esc(res.error || 'Checkout couldn’t be started. Please try again.')}</span></div>`;
+        errContainer.innerHTML = `<div class="ml-notice tone-danger ml-checkout-err">${icon('alert')}<span>${esc(res.error || t('paywall.checkoutError'))}</span></div>`;
         errContainer.style.display = 'block';
       }
     }
@@ -1064,10 +1142,10 @@ function renderProActivatedSuccess(): void {
   body.innerHTML = `
     <div class="ml-empty ml-stagger">
       <div class="ml-empty-icon tone-positive">${icon('checkCircle', 24)}</div>
-      <h2 class="ml-empty-title">You’re on MarketLens Pro</h2>
-      <p class="ml-empty-sub">Payment confirmed. Unlimited analyses are now active on this browser.</p>
+      <h2 class="ml-empty-title">${esc(t('pro.title'))}</h2>
+      <p class="ml-empty-sub">${esc(t('pro.sub'))}</p>
       <div class="ml-empty-actions">
-        <button class="ml-btn ml-btn-primary is-block" id="ml-pro-continue-btn">Analyze this listing</button>
+        <button class="ml-btn ml-btn-primary is-block" id="ml-pro-continue-btn">${esc(t('pro.cta'))}</button>
       </div>
     </div>
   `;
@@ -1104,7 +1182,7 @@ async function executeAppraisal(context: UniversalListingContext): Promise<void>
   }
 
   try {
-    const analysis = await analyzeWithGemini(context);
+    const analysis = await analyzeWithGemini({ ...context, responseLanguage: getLocale() });
     await decrementFreeQuota();
     currentUserSub = await getUserSubscription();
     const analyzedAt = Date.now();
@@ -1128,16 +1206,17 @@ async function executeAppraisal(context: UniversalListingContext): Promise<void>
 function showModalError(msg: string): void {
   const body = document.getElementById('ml-drawer-body');
   if (!body) return;
+  rerenderCurrentView = () => showModalError(msg);
 
   body.innerHTML = `
     <div class="ml-empty ml-stagger">
       <div class="ml-empty-icon tone-danger">${icon('alert', 22)}</div>
-      <h2 class="ml-empty-title">We couldn’t analyze this listing</h2>
-      <p class="ml-empty-sub">Check your connection and try again. Some listing layouts may not be supported yet.</p>
-      <p class="ml-error-msg">${esc(msg)}</p>
+      <h2 class="ml-empty-title">${esc(t('error.title'))}</h2>
+      <p class="ml-empty-sub">${esc(t('error.sub'))}</p>
+      <p class="ml-error-msg" dir="auto">${esc(msg)}</p>
       <div class="ml-empty-actions">
-        ${retryLastAction ? `<button class="ml-btn ml-btn-primary is-block" id="ml-error-retry">${icon('refresh')}<span>Try again</span></button>` : ''}
-        <button class="ml-btn ml-btn-link" id="ml-error-demo">View a sample analysis</button>
+        ${retryLastAction ? `<button class="ml-btn ml-btn-primary is-block" id="ml-error-retry">${icon('refresh')}<span>${esc(t('error.retry'))}</span></button>` : ''}
+        <button class="ml-btn ml-btn-link" id="ml-error-demo">${esc(t('common.viewSample'))}</button>
       </div>
     </div>
   `;
@@ -1167,6 +1246,7 @@ function renderInpageResults(
   const body = document.getElementById('ml-drawer-body');
   if (!body) return;
   setSettingsButtonActive(false);
+  rerenderCurrentView = isDemo ? showSampleAnalysis : () => renderInpageResults(analysis, context, false, analyzedAt);
 
   // Pin scroll to top so the verdict is the first thing visible
   body.scrollTop = 0;
@@ -1180,7 +1260,7 @@ function renderInpageResults(
       : SCORE_FROM_RATING[pricing.dealRating] ?? 50;
   const buyVerdict: BuyVerdict | 'unknown' =
     analysis.buyVerdict || VERDICT_FROM_RATING[pricing.dealRating] || 'unknown';
-  const verdictBadge = VERDICT_BADGE[buyVerdict];
+  const verdictTone = VERDICT_TONE[buyVerdict];
   const tone = scoreTone(buyScore);
   const redFlags = analysis.redFlags ?? [];
   const questions = analysis.questionsToAsk ?? [];
@@ -1208,11 +1288,11 @@ function renderInpageResults(
   const pctVsMarket = pricing.percentageVsMarket;
   if (typeof pctVsMarket === 'number' && isFinite(pctVsMarket)) {
     if (pctVsMarket <= -3) {
-      marketBadge = `<span class="ml-badge tone-positive">${Math.abs(Math.round(pctVsMarket))}% below market</span>`;
+      marketBadge = `<span class="ml-badge tone-positive">${esc(t('price.belowMarket', { pct: Math.abs(Math.round(pctVsMarket)) }))}</span>`;
     } else if (pctVsMarket >= 3) {
-      marketBadge = `<span class="ml-badge tone-danger">${Math.round(pctVsMarket)}% above market</span>`;
+      marketBadge = `<span class="ml-badge tone-danger">${esc(t('price.aboveMarket', { pct: Math.round(pctVsMarket) }))}</span>`;
     } else {
-      marketBadge = `<span class="ml-badge">At market price</span>`;
+      marketBadge = `<span class="ml-badge">${esc(t('price.atMarket'))}</span>`;
     }
   }
 
@@ -1227,45 +1307,37 @@ function renderInpageResults(
         <div class="ml-range-track">
           ${scale.bandStart !== null && scale.bandEnd !== null ? `<div class="ml-range-band" style="left:${scale.bandStart}%;width:${Math.max(0, scale.bandEnd - scale.bandStart)}%"></div>` : ''}
           ${scale.msrp !== null ? `<div class="ml-range-tick" style="left:${scale.msrp}%"></div>` : ''}
-          ${scale.asking !== null ? `<div class="ml-range-marker" style="left:${scale.asking}%"></div><div class="ml-range-label ${labelAlign}" style="left:${scale.asking}%">Asking ${esc(money(askingNum))}</div>` : ''}
+          ${scale.asking !== null ? `<div class="ml-range-marker" style="left:${scale.asking}%"></div><div class="ml-range-label ${labelAlign}" style="left:${scale.asking}%">${esc(t('price.askingMarker', { amount: money(askingNum) }))}</div>` : ''}
         </div>
         <div class="ml-range-legend">
-          ${scale.asking !== null ? '<span><i class="ml-legend-dot"></i>Asking</span>' : ''}
-          ${scale.bandStart !== null ? '<span><i class="ml-legend-swatch"></i>Fair used range</span>' : ''}
-          ${scale.msrp !== null ? '<span><i class="ml-legend-tick"></i>Retail (new)</span>' : ''}
+          ${scale.asking !== null ? `<span><i class="ml-legend-dot"></i>${esc(t('price.legendAsking'))}</span>` : ''}
+          ${scale.bandStart !== null ? `<span><i class="ml-legend-swatch"></i>${esc(t('price.legendFair'))}</span>` : ''}
+          ${scale.msrp !== null ? `<span><i class="ml-legend-tick"></i>${esc(t('price.legendRetail'))}</span>` : ''}
         </div>
       </div>`
       : '';
 
   const modelYear = identifiedProduct?.modelYear;
-  const msrpLabel = modelYear ? `Retail when new (${modelYear})` : 'Retail when new';
+  const msrpLabel = modelYear ? t('price.retailNewYear', { year: modelYear }) : t('price.retailNew');
 
   const resolvedVerdictLabel =
     analysis.buyVerdictLabel ||
     pricing?.dealVerdictLabel ||
-    (buyVerdict === 'walk_away'
-      ? 'Walk away — poor deal or high risk'
-      : buyVerdict === 'buy_now'
-      ? 'Great buy — act fast'
-      : buyVerdict === 'good_buy'
-      ? 'Good buy at a fair price'
-      : buyVerdict === 'negotiate'
-      ? 'Negotiate before buying'
-      : 'Proceed with caution');
+    t(`verdictLabel.${(buyVerdict as string) === 'unknown' ? 'caution' : (buyVerdict as BuyVerdict)}` as const);
 
-  const resolvedProductName = identifiedProduct?.name || context.title || 'Marketplace item';
-  const resolvedSummary = analysis.aiSummary || 'Appraisal completed for this listing.';
+  const resolvedProductName = identifiedProduct?.name || context.title || t('results.marketItem');
+  const resolvedSummary = analysis.aiSummary || t('results.summaryFallback');
 
   const criticalCount = redFlags.filter((f) => f.severity === 'critical').length;
   const warningCount = redFlags.filter((f) => f.severity === 'warning').length;
   const flagsBadge =
     redFlags.length === 0
-      ? `<span class="ml-badge tone-positive">No issues</span>`
+      ? `<span class="ml-badge tone-positive">${esc(t('risk.noIssues'))}</span>`
       : criticalCount > 0
-      ? `<span class="ml-badge tone-danger">${criticalCount} critical</span>`
+      ? `<span class="ml-badge tone-danger">${esc(tn('risk.critical', criticalCount))}</span>`
       : warningCount > 0
-      ? `<span class="ml-badge tone-warning">${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'}</span>`
-      : `<span class="ml-badge tone-info">${redFlags.length} ${redFlags.length === 1 ? 'note' : 'notes'}</span>`;
+      ? `<span class="ml-badge tone-warning">${esc(tn('risk.warnings', warningCount))}</span>`
+      : `<span class="ml-badge tone-info">${esc(tn('risk.notes', redFlags.length))}</span>`;
 
   const FLAG_STYLE: Record<string, { tone: Tone; icon: IconName }> = {
     critical: { tone: 'danger', icon: 'octagon' },
@@ -1284,24 +1356,24 @@ function renderInpageResults(
     ${isDemo ? `
       <div class="ml-notice tone-info ml-stagger" style="--i:${next()}">
         ${icon('info')}
-        <div><strong>Sample analysis.</strong> This is example data, not the page you’re viewing.</div>
+        <div><strong>${esc(t('results.sampleTitle'))}</strong> ${esc(t('results.sampleBody'))}</div>
       </div>
     ` : `
       <div class="ml-toolbar ml-stagger" style="--i:${next()}">
-        <button class="ml-btn ml-btn-secondary is-sm" id="ml-save-btn">${icon('bookmark')}<span>Save</span></button>
-        <button class="ml-btn ml-btn-secondary is-sm" id="ml-share-btn">${icon('fileText')}<span>Copy summary</span></button>
-        <span class="ml-toolbar-meta" ${analyzedAt ? `title="${esc(new Date(analyzedAt).toLocaleString())}"` : ''}>
+        <button class="ml-btn ml-btn-secondary is-sm" id="ml-save-btn">${icon('bookmark')}<span>${esc(t('common.save'))}</span></button>
+        <button class="ml-btn ml-btn-secondary is-sm" id="ml-share-btn">${icon('fileText')}<span>${esc(t('results.copySummary'))}</span></button>
+        <span class="ml-toolbar-meta" ${analyzedAt ? `title="${esc(new Date(analyzedAt).toLocaleString(intlLocale()))}"` : ''}>
           ${analyzedAt ? `${icon('clock', 13)}<span>${esc(timeAgo(analyzedAt))}</span>` : ''}
         </span>
-        ${reanalyzeAction ? `<button class="ml-icon-btn is-sm" id="ml-reanalyze-btn" title="Run a fresh analysis${currentUserSub?.isPro ? '' : ' (uses one free analysis)'}" aria-label="Re-analyze">${icon('refresh', 15)}</button>` : ''}
+        ${reanalyzeAction ? `<button class="ml-icon-btn is-sm" id="ml-reanalyze-btn" title="${esc(t(currentUserSub?.isPro ? 'results.reanalyzeTitle' : 'results.reanalyzeTitleFree'))}" aria-label="${esc(t('results.reanalyze'))}">${icon('refresh', 15)}</button>` : ''}
       </div>
       <div id="ml-price-change-slot"></div>
     `}
 
     <section class="ml-section ml-stagger tone-${tone}" style="--i:${next()}">
-      <div class="ml-hero-product">${esc(resolvedProductName)}</div>
+      <div class="ml-hero-product" dir="auto">${esc(resolvedProductName)}</div>
       <div class="ml-hero-main">
-        <div class="ml-score-ring" role="img" aria-label="Buy score ${buyScore} out of 100">
+        <div class="ml-score-ring" role="img" aria-label="${esc(t('results.buyScoreAria', { score: buyScore }))}">
           <svg width="76" height="76" viewBox="0 0 76 76">
             <circle class="ml-score-ring-track" cx="38" cy="38" r="${RING_R}"></circle>
             <circle
@@ -1314,129 +1386,129 @@ function renderInpageResults(
           </svg>
           <div class="ml-score-ring-center">
             <span class="ml-score-num" id="ml-score-num-val">0</span>
-            <span class="ml-score-of">Buy score</span>
+            <span class="ml-score-of">${esc(t('results.buyScore'))}</span>
           </div>
         </div>
         <div class="ml-hero-verdict">
-          <span class="ml-badge has-dot tone-${verdictBadge.tone}">${verdictBadge.text}</span>
-          <h2 class="ml-hero-title">${esc(resolvedVerdictLabel)}</h2>
+          <span class="ml-badge has-dot tone-${verdictTone}">${esc(t(`verdict.${buyVerdict}` as const))}</span>
+          <h2 class="ml-hero-title" dir="auto">${esc(resolvedVerdictLabel)}</h2>
         </div>
       </div>
-      <p class="ml-hero-summary">${esc(resolvedSummary)}</p>
+      <p class="ml-hero-summary" dir="auto">${esc(resolvedSummary)}</p>
       <div class="ml-keystats">
         <div class="ml-keystat">
-          <span class="ml-keystat-label">Asking</span>
+          <span class="ml-keystat-label">${esc(t('results.asking'))}</span>
           <span class="ml-keystat-value" title="${esc(askingDisplay)}">${esc(askingDisplay)}</span>
         </div>
         <div class="ml-keystat">
-          <span class="ml-keystat-label">Fair value</span>
+          <span class="ml-keystat-label">${esc(t('results.fairValue'))}</span>
           <span class="ml-keystat-value">${esc(money(fair?.fairAverage))}</span>
         </div>
         <div class="ml-keystat">
-          <span class="ml-keystat-label">Suggested offer</span>
+          <span class="ml-keystat-label">${esc(t('results.suggestedOffer'))}</span>
           <span class="ml-keystat-value is-accent">${esc(money(negotiation?.recommendedOffer))}</span>
         </div>
       </div>
     </section>
 
     <section class="ml-section ml-stagger" style="--i:${next()}">
-      ${sectionHead('tag', 'Price check', marketBadge)}
+      ${sectionHead('tag', t('price.title'), marketBadge)}
       ${rangeChart}
       <div class="ml-kv">
-        <div class="ml-kv-row"><span class="ml-kv-key">Asking price</span><span class="ml-kv-val">${esc(askingDisplay)}</span></div>
-        <div class="ml-kv-row"><span class="ml-kv-key">Fair used range</span><span class="ml-kv-val">${esc(money(fair?.min))} – ${esc(money(fair?.max))}<small>avg ${esc(money(fair?.fairAverage))}</small></span></div>
-        <div class="ml-kv-row"><span class="ml-kv-key">${esc(msrpLabel)}</span><span class="ml-kv-val">${msrp ? esc(money(msrp)) : '—'}${discountPct ? `<small>${discountPct}% less</small>` : ''}</span></div>
+        <div class="ml-kv-row"><span class="ml-kv-key">${esc(t('price.askingPrice'))}</span><span class="ml-kv-val"><bdi>${esc(askingDisplay)}</bdi></span></div>
+        <div class="ml-kv-row"><span class="ml-kv-key">${esc(t('price.fairRange'))}</span><span class="ml-kv-val"><bdi>${esc(money(fair?.min))} – ${esc(money(fair?.max))}</bdi><small>${esc(t('price.avg', { amount: money(fair?.fairAverage) }))}</small></span></div>
+        <div class="ml-kv-row"><span class="ml-kv-key">${esc(msrpLabel)}</span><span class="ml-kv-val">${msrp ? esc(money(msrp)) : '—'}${discountPct ? `<small>${esc(t('price.pctLess', { pct: discountPct }))}</small>` : ''}</span></div>
       </div>
     </section>
 
     <section class="ml-section ml-stagger" style="--i:${next()}">
-      ${sectionHead('shield', 'Risk check', flagsBadge)}
+      ${sectionHead('shield', t('risk.title'), flagsBadge)}
       ${redFlags.length > 0 ? `
         <div class="ml-list">
           ${redFlags.map((flag) => {
             const style = FLAG_STYLE[flag.severity] ?? FLAG_STYLE.info;
-            return `<div class="ml-flag tone-${style.tone}">${icon(style.icon)}<span>${esc(flag.text)}</span></div>`;
+            return `<div class="ml-flag tone-${style.tone}">${icon(style.icon)}<span dir="auto">${esc(flag.text)}</span></div>`;
           }).join('')}
         </div>
       ` : `
-        <div class="ml-flag tone-positive">${icon('shieldCheck')}<span>No scam signals or red flags found in this listing.</span></div>
+        <div class="ml-flag tone-positive">${icon('shieldCheck')}<span>${esc(t('risk.allClear'))}</span></div>
       `}
     </section>
 
     <section class="ml-section ml-stagger" style="--i:${next()}">
-      ${sectionHead('camera', 'Condition', `<span class="ml-badge tone-${CONDITION_TONE[conditionScore] ?? 'info'}">${esc(conditionScore.charAt(0).toUpperCase() + conditionScore.slice(1))}</span>`)}
+      ${sectionHead('camera', t('condition.title'), `<span class="ml-badge tone-${CONDITION_TONE[conditionScore] ?? 'info'}">${esc(CONDITION_TONE[conditionScore] ? t(`condition.${conditionScore}` as const) : conditionScore)}</span>`)}
       <div class="ml-media">
         ${imageUrl ? `<img src="${esc(imageUrl)}" alt="" class="ml-media-thumb" />` : ''}
         <div class="ml-media-info">
           ${brandModel ? `<span class="ml-media-title">${esc(brandModel)}</span>` : ''}
           ${identifiedProduct?.category ? `<span class="ml-media-sub">${esc(identifiedProduct.category)}</span>` : ''}
           ${visualAudit.isAuthenticUserPhoto
-            ? `<span class="ml-auth tone-positive">${icon('checkCircle', 13)}Original seller photo</span>`
-            : `<span class="ml-auth tone-warning">${icon('alert', 13)}May be a stock or catalog image</span>`}
+            ? `<span class="ml-auth tone-positive">${icon('checkCircle', 13)}${esc(t('condition.originalPhoto'))}</span>`
+            : `<span class="ml-auth tone-warning">${icon('alert', 13)}${esc(t('condition.stockPhoto'))}</span>`}
         </div>
       </div>
-      ${identifiedProduct?.conditionReport ? `<p class="ml-body-text">${esc(identifiedProduct.conditionReport)}</p>` : ''}
+      ${identifiedProduct?.conditionReport ? `<p class="ml-body-text" dir="auto">${esc(identifiedProduct.conditionReport)}</p>` : ''}
 
-      <h4 class="ml-subhead">Observations</h4>
+      <h4 class="ml-subhead">${esc(t('condition.observations'))}</h4>
       ${flaws.length > 0
-        ? `<ul class="ml-bullets">${flaws.map((f) => `<li><span class="ml-dot"></span><span>${esc(f)}</span></li>`).join('')}</ul>`
-        : `<ul class="ml-bullets is-check"><li>${icon('check')}<span>No visible scratches, cracks or damage in the photos.</span></li></ul>`}
+        ? `<ul class="ml-bullets">${flaws.map((f) => `<li><span class="ml-dot"></span><span dir="auto">${esc(f)}</span></li>`).join('')}</ul>`
+        : `<ul class="ml-bullets is-check"><li>${icon('check')}<span>${esc(t('condition.noDamage'))}</span></li></ul>`}
 
       ${accessories.length > 0 ? `
-        <h4 class="ml-subhead">Included</h4>
-        <ul class="ml-bullets is-check">${accessories.map((a) => `<li>${icon('check')}<span>${esc(a)}</span></li>`).join('')}</ul>
+        <h4 class="ml-subhead">${esc(t('condition.included'))}</h4>
+        <ul class="ml-bullets is-check">${accessories.map((a) => `<li>${icon('check')}<span dir="auto">${esc(a)}</span></li>`).join('')}</ul>
       ` : ''}
     </section>
 
     ${questions.length > 0 ? `
       <section class="ml-section ml-stagger" style="--i:${next()}">
-        ${sectionHead('help', 'Ask the seller', `<button class="ml-btn ml-btn-ghost is-sm" id="ml-copy-questions-btn">${icon('copy')}<span>Copy</span></button>`)}
+        ${sectionHead('help', t('questions.title'), `<button class="ml-btn ml-btn-ghost is-sm" id="ml-copy-questions-btn">${icon('copy')}<span>${esc(t('common.copy'))}</span></button>`)}
         <ol class="ml-questions">
-          ${questions.map((q, i) => `<li><span class="ml-q-num">${i + 1}</span><span>${esc(q)}</span></li>`).join('')}
+          ${questions.map((q, i) => `<li><span class="ml-q-num">${i + 1}</span><span dir="auto">${esc(q)}</span></li>`).join('')}
         </ol>
       </section>
     ` : ''}
 
     <section class="ml-section ml-stagger" style="--i:${next()}">
-      ${sectionHead('message', 'Counter-offer', `<span class="ml-badge tone-accent">Suggested ${esc(money(negotiation.recommendedOffer))}</span>`)}
+      ${sectionHead('message', t('offer.title'), `<span class="ml-badge tone-accent">${esc(t('offer.suggested', { amount: money(negotiation.recommendedOffer) }))}</span>`)}
       <div class="ml-offer-controls">
-        <div class="ml-stepper" role="group" aria-label="Offer amount">
-          <button class="ml-stepper-btn" id="ml-offer-dec" aria-label="Lower offer">${icon('minus', 14)}</button>
+        <div class="ml-stepper" role="group" aria-label="${esc(t('offer.amountAria'))}" dir="ltr">
+          <button class="ml-stepper-btn" id="ml-offer-dec" aria-label="${esc(t('offer.lower'))}">${icon('minus', 14)}</button>
           <span class="ml-stepper-value" id="ml-offer-amount" aria-live="polite"></span>
-          <button class="ml-stepper-btn" id="ml-offer-inc" aria-label="Raise offer">${icon('plus', 14)}</button>
+          <button class="ml-stepper-btn" id="ml-offer-inc" aria-label="${esc(t('offer.raise'))}">${icon('plus', 14)}</button>
         </div>
         <span class="ml-offer-delta" id="ml-offer-delta"></span>
       </div>
-      <div class="ml-tabs" role="tablist" aria-label="Message style">
-        ${OFFER_TONES.map((t) => `<button class="ml-tab" role="tab" data-tone="${t.id}">${t.label}</button>`).join('')}
+      <div class="ml-tabs" role="tablist" aria-label="${esc(t('offer.styleAria'))}">
+        ${OFFER_TONES.map((tone) => `<button class="ml-tab" role="tab" data-tone="${tone}">${esc(offerToneLabel(tone))}</button>`).join('')}
       </div>
-      <div class="ml-message" id="ml-offer-message"></div>
-      <button class="ml-btn ml-btn-primary is-block" id="ml-copy-inpage-btn">${icon('copy')}<span>Copy message</span></button>
+      <div class="ml-message" id="ml-offer-message" dir="auto"></div>
+      <button class="ml-btn ml-btn-primary is-block" id="ml-copy-inpage-btn">${icon('copy')}<span>${esc(t('offer.copy'))}</span></button>
     </section>
 
     <section class="ml-section ml-stagger" style="--i:${next()}">
-      ${sectionHead('trendingUp', 'Resale outlook', `<span class="ml-badge">${esc(flipPotential.score)} / 10</span>`)}
+      ${sectionHead('trendingUp', t('resale.title'), `<span class="ml-badge"><bdi>${esc(flipPotential.score)} / 10</bdi></span>`)}
       <div class="ml-stats">
         <div class="ml-stat">
-          <span class="ml-stat-label">Resale value</span>
+          <span class="ml-stat-label">${esc(t('resale.value'))}</span>
           <span class="ml-stat-value">${esc(money(flipPotential.estimatedResaleValue))}</span>
         </div>
         <div class="ml-stat">
-          <span class="ml-stat-label">Net margin</span>
-          <span class="ml-stat-value ${netProfit >= 0 ? 'is-positive' : 'is-negative'}">${netProfit >= 0 ? '+' : ''}${esc(money(netProfit))}</span>
+          <span class="ml-stat-label">${esc(t('resale.margin'))}</span>
+          <span class="ml-stat-value ${netProfit >= 0 ? 'is-positive' : 'is-negative'}"><bdi>${netProfit >= 0 ? '+' : ''}${esc(money(netProfit))}</bdi></span>
         </div>
         <div class="ml-stat">
-          <span class="ml-stat-label">Time to sell</span>
+          <span class="ml-stat-label">${esc(t('resale.time'))}</span>
           <span class="ml-stat-value" title="${esc(flipPotential.resaleTimeframe)}">${esc(flipPotential.resaleTimeframe)}</span>
         </div>
       </div>
       ${netProfit < 0 ? `
-        <div class="ml-notice tone-warning">${icon('alert')}<span>Reselling at today’s market price would lose about ${esc(money(Math.abs(netProfit)))}. Better for personal use than flipping.</span></div>
+        <div class="ml-notice tone-warning">${icon('alert')}<span>${esc(t('resale.loss', { amount: money(Math.abs(netProfit)) }))}</span></div>
       ` : ''}
-      ${flipPotential.flipSummary ? `<p class="ml-body-text">${esc(flipPotential.flipSummary)}</p>` : ''}
+      ${flipPotential.flipSummary ? `<p class="ml-body-text" dir="auto">${esc(flipPotential.flipSummary)}</p>` : ''}
     </section>
 
-    <p class="ml-disclaimer">AI estimates based on the listing and recent market data. Always inspect the item before paying.</p>
+    <p class="ml-disclaimer">${esc(t('results.disclaimer'))}</p>
   `;
 
   // ── Animate the score ring + count-up once the markup is mounted ──
@@ -1485,15 +1557,15 @@ function renderInpageResults(
     });
   };
 
-  wireCopy('ml-copy-questions-btn', () => questions.map((q, i) => `${i + 1}. ${q}`).join('\n'), 'Copy', 'Copied');
-  wireCopy('ml-copy-inpage-btn', () => document.getElementById('ml-offer-message')?.textContent || '', 'Copy message', 'Copied — paste it in chat');
-  wireCopy('ml-share-btn', () => buildDealSummary(analysis, context), 'Copy summary', 'Summary copied', 'fileText');
+  wireCopy('ml-copy-questions-btn', () => questions.map((q, i) => `${i + 1}. ${q}`).join('\n'), t('common.copy'), t('common.copied'));
+  wireCopy('ml-copy-inpage-btn', () => document.getElementById('ml-offer-message')?.textContent || '', t('offer.copy'), t('offer.copied'));
+  wireCopy('ml-share-btn', () => buildDealSummary(analysis, context), t('results.copySummary'), t('results.summaryCopied'), 'fileText');
 
   // ── Counter-offer builder ──
   const asking = askingNum ?? null;
   const recommended = Math.max(1, Math.round(negotiation?.recommendedOffer || (asking ? asking * 0.9 : 0) || 1));
   const hasAiDraft = Boolean(negotiation?.counterOfferMessage);
-  const offerItem = shortItemName(analysis, 'item');
+  const offerItem = shortItemName(analysis, t('offer.itemFallback'));
   let offerAmount = recommended;
   let offerTone: OfferTone = hasAiDraft ? 'ai' : 'friendly';
 
@@ -1506,7 +1578,11 @@ function renderInpageResults(
       if (asking && asking > 0) {
         const diff = asking - offerAmount;
         deltaEl.textContent =
-          diff > 0 ? `${money(diff)} below asking` : diff < 0 ? `${money(-diff)} above asking` : 'Matches asking price';
+          diff > 0
+            ? t('offer.below', { amount: money(diff) })
+            : diff < 0
+            ? t('offer.above', { amount: money(-diff) })
+            : t('offer.matches');
         deltaEl.className = `ml-offer-delta${diff < 0 ? ' is-over' : ''}`;
       } else {
         deltaEl.textContent = '';
@@ -1551,9 +1627,9 @@ function renderInpageResults(
     const saveBtn = document.getElementById('ml-save-btn') as HTMLButtonElement | null;
     const setSaved = (saved: boolean) => {
       if (!saveBtn) return;
-      setButtonLabel(saveBtn, saved ? 'Saved' : 'Save', saved ? 'bookmarkCheck' : 'bookmark');
+      setButtonLabel(saveBtn, t(saved ? 'common.saved' : 'common.save'), saved ? 'bookmarkCheck' : 'bookmark');
       saveBtn.classList.toggle('is-active', saved);
-      saveBtn.title = saved ? 'Remove from saved listings' : 'Save to your listings and track price changes';
+      saveBtn.title = t(saved ? 'save.removeTitle' : 'save.addTitle');
       saveBtn.dataset.saved = String(saved);
     };
 
@@ -1569,16 +1645,16 @@ function renderInpageResults(
           const item = await getWatchItem(context.url);
           if (item) await removeFromWatchlist(item.id);
           setSaved(false);
-          showToast('Removed from saved');
+          showToast(t('toast.removed'));
         } else {
           // Start price tracking from today's price, not the (possibly older) analyzed one
           const livePrice = readLivePrice(context.url);
           await saveToWatchlist({ ...context, priceRaw: livePrice || context.priceRaw }, analysis, analyzedAt);
           setSaved(true);
-          showToast('Saved — we’ll track price changes');
+          showToast(t('toast.saved'));
         }
       } catch {
-        showToast('Couldn’t update saved listings');
+        showToast(t('toast.saveError'));
       } finally {
         saveBtn.disabled = false;
       }
@@ -1615,98 +1691,114 @@ function renderInpageSettings(): void {
   const body = document.getElementById('ml-drawer-body');
   if (!body) return;
   setSettingsButtonActive(true);
+  rerenderCurrentView = renderInpageSettings;
 
   const isPro = currentUserSub?.isPro ?? false;
   const remaining = currentUserSub?.freeAppraisalsRemaining ?? 1;
-  const freeLeftText =
-    remaining > 0 ? `${remaining} free ${remaining === 1 ? 'analysis' : 'analyses'} left` : 'No free analyses left';
+  const freeLeftText = remaining > 0 ? tn('settings.freeLeft', remaining) : t('settings.noneLeft');
 
   const toggleRow = (id: string, name: string, sub: string, checked: boolean) => `
     <div class="ml-setting-row">
       <div class="ml-setting-text">
-        <span class="ml-setting-name">${name}</span>
-        <span class="ml-setting-sub">${sub}</span>
+        <span class="ml-setting-name">${esc(name)}</span>
+        <span class="ml-setting-sub">${esc(sub)}</span>
       </div>
       <label class="ml-switch">
-        <input type="checkbox" id="${id}" ${checked ? 'checked' : ''} aria-label="${name}" />
+        <input type="checkbox" id="${id}" ${checked ? 'checked' : ''} aria-label="${esc(name)}" />
         <span class="ml-slider"></span>
       </label>
     </div>
   `;
 
   const themeBtn = (val: ThemeMode, label: string, iconName: IconName) => `
-    <button class="ml-theme-btn ${currentPrefs.theme === val ? 'active' : ''}" data-theme-val="${val}">${icon(iconName)}<span>${label}</span></button>
+    <button class="ml-theme-btn ${currentPrefs.theme === val ? 'active' : ''}" data-theme-val="${val}">${icon(iconName)}<span>${esc(label)}</span></button>
   `;
+
+  const autoLocale = detectAutoLocale();
+  const languageOptions = [
+    `<option value="auto" ${currentPrefs.language === 'auto' ? 'selected' : ''}>${esc(t('settings.languageAuto', { language: LOCALE_INFO[autoLocale].nativeName }))}</option>`,
+    ...LOCALES.map(
+      (code) =>
+        `<option value="${code}" lang="${code}" ${currentPrefs.language === code ? 'selected' : ''}>${esc(LOCALE_INFO[code].nativeName)}</option>`
+    ),
+  ].join('');
 
   body.innerHTML = `
     <div class="ml-subheader">
-      <button class="ml-icon-btn" id="ml-back-to-appraisal" title="Back" aria-label="Back">${icon('arrowLeft', 18)}</button>
-      <h2 class="ml-subheader-title">Settings</h2>
+      <button class="ml-icon-btn ml-flip-rtl" id="ml-back-to-appraisal" title="${esc(t('common.back'))}" aria-label="${esc(t('common.back'))}">${icon('arrowLeft', 18)}</button>
+      <h2 class="ml-subheader-title">${esc(t('settings.title'))}</h2>
     </div>
 
     <section class="ml-section ml-settings-group">
-      <h3 class="ml-settings-group-title">Plan</h3>
+      <h3 class="ml-settings-group-title">${esc(t('settings.plan'))}</h3>
       <div class="ml-setting-row">
         <div class="ml-setting-text">
-          <span class="ml-setting-name">${isPro ? 'MarketLens Pro' : 'Free plan'}</span>
-          <span class="ml-setting-sub">${isPro ? 'Unlimited analyses' : freeLeftText}</span>
+          <span class="ml-setting-name">${esc(t(isPro ? 'settings.proPlan' : 'settings.freePlan'))}</span>
+          <span class="ml-setting-sub">${esc(isPro ? t('settings.unlimited') : freeLeftText)}</span>
         </div>
         ${
           isPro
-            ? `<button class="ml-btn ml-btn-secondary is-sm" id="ml-settings-portal-btn"><span>Manage billing</span>${icon('external')}</button>`
-            : `<button class="ml-btn ml-btn-primary is-sm" id="ml-settings-upgrade-btn">${icon('gem')}<span>Upgrade</span></button>`
+            ? `<button class="ml-btn ml-btn-secondary is-sm" id="ml-settings-portal-btn"><span>${esc(t('settings.manageBilling'))}</span>${icon('external')}</button>`
+            : `<button class="ml-btn ml-btn-primary is-sm" id="ml-settings-upgrade-btn">${icon('gem')}<span>${esc(t('plan.upgrade'))}</span></button>`
         }
       </div>
     </section>
 
     <section class="ml-section ml-settings-group">
-      <h3 class="ml-settings-group-title">On-page buttons</h3>
-      ${toggleRow('pref-grid-badges', 'Feed badges', 'Show an Analyze badge on Facebook Marketplace feed cards', currentPrefs.showGridBadges)}
-      ${toggleRow('pref-detail-btn', 'Listing button', 'Show the floating Analyze button on item pages', currentPrefs.showDetailPageButton)}
-      ${toggleRow('pref-auto-analyze', 'Open and analyze', 'Clicking a feed badge opens the listing and analyzes it', currentPrefs.autoAnalyzeOnCardClick)}
-    </section>
-
-    <section class="ml-section ml-settings-group">
-      <h3 class="ml-settings-group-title">Saved & history</h3>
-      <div class="ml-setting-row">
-        <div class="ml-setting-text">
-          <span class="ml-setting-name">Saved listings</span>
-          <span class="ml-setting-sub" id="ml-saved-count">Track prices, notes and compare items</span>
-        </div>
-        <button class="ml-btn ml-btn-secondary is-sm" id="ml-settings-open-saved"><span>Open</span>${icon('external')}</button>
-      </div>
-      <div class="ml-setting-row">
-        <div class="ml-setting-text">
-          <span class="ml-setting-name">Analysis history</span>
-          <span class="ml-setting-sub" id="ml-history-count">Reopen past analyses without using another one</span>
-        </div>
-        <button class="ml-btn ml-btn-ghost is-sm" id="ml-clear-history-btn">Clear</button>
-      </div>
-    </section>
-
-    <section class="ml-section ml-settings-group">
-      <h3 class="ml-settings-group-title">Keyboard shortcut</h3>
-      <div class="ml-setting-row">
-        <div class="ml-setting-text">
-          <span class="ml-setting-name">Open MarketLens</span>
-          <span class="ml-setting-sub">Change it at chrome://extensions/shortcuts</span>
-        </div>
-        <span class="ml-kbd-group"><kbd class="ml-kbd">Alt</kbd><kbd class="ml-kbd">Shift</kbd><kbd class="ml-kbd">M</kbd></span>
-      </div>
-    </section>
-
-    <section class="ml-section ml-settings-group">
-      <h3 class="ml-settings-group-title">Appearance</h3>
+      <h3 class="ml-settings-group-title">${esc(t('settings.language'))}</h3>
       <div class="ml-setting-stack">
-        <span class="ml-setting-name">Theme</span>
-        <div class="ml-segmented" role="group" aria-label="Theme">
-          ${themeBtn('light', 'Light', 'sun')}
-          ${themeBtn('dark', 'Dark', 'moon')}
-          ${themeBtn('system', 'System', 'monitor')}
+        <select class="ml-select" id="pref-language" aria-label="${esc(t('settings.language'))}">${languageOptions}</select>
+      </div>
+    </section>
+
+    <section class="ml-section ml-settings-group">
+      <h3 class="ml-settings-group-title">${esc(t('settings.onPage'))}</h3>
+      ${toggleRow('pref-grid-badges', t('settings.feedBadges'), t('settings.feedBadgesSub'), currentPrefs.showGridBadges)}
+      ${toggleRow('pref-detail-btn', t('settings.listingButton'), t('settings.listingButtonSub'), currentPrefs.showDetailPageButton)}
+      ${toggleRow('pref-auto-analyze', t('settings.autoOpen'), t('settings.autoOpenSub'), currentPrefs.autoAnalyzeOnCardClick)}
+    </section>
+
+    <section class="ml-section ml-settings-group">
+      <h3 class="ml-settings-group-title">${esc(t('settings.savedHistory'))}</h3>
+      <div class="ml-setting-row">
+        <div class="ml-setting-text">
+          <span class="ml-setting-name">${esc(t('settings.savedListings'))}</span>
+          <span class="ml-setting-sub" id="ml-saved-count">${esc(t('settings.savedSub'))}</span>
+        </div>
+        <button class="ml-btn ml-btn-secondary is-sm" id="ml-settings-open-saved"><span>${esc(t('common.open'))}</span>${icon('external')}</button>
+      </div>
+      <div class="ml-setting-row">
+        <div class="ml-setting-text">
+          <span class="ml-setting-name">${esc(t('settings.history'))}</span>
+          <span class="ml-setting-sub" id="ml-history-count">${esc(t('settings.historySub'))}</span>
+        </div>
+        <button class="ml-btn ml-btn-ghost is-sm" id="ml-clear-history-btn">${esc(t('settings.clear'))}</button>
+      </div>
+    </section>
+
+    <section class="ml-section ml-settings-group">
+      <h3 class="ml-settings-group-title">${esc(t('settings.shortcut'))}</h3>
+      <div class="ml-setting-row">
+        <div class="ml-setting-text">
+          <span class="ml-setting-name">${esc(t('settings.openMarketLens'))}</span>
+          <span class="ml-setting-sub">${esc(t('settings.shortcutSub'))}</span>
+        </div>
+        <bdi class="ml-kbd-group" dir="ltr"><kbd class="ml-kbd">Alt</kbd><kbd class="ml-kbd">Shift</kbd><kbd class="ml-kbd">M</kbd></bdi>
+      </div>
+    </section>
+
+    <section class="ml-section ml-settings-group">
+      <h3 class="ml-settings-group-title">${esc(t('settings.appearance'))}</h3>
+      <div class="ml-setting-stack">
+        <span class="ml-setting-name">${esc(t('settings.theme'))}</span>
+        <div class="ml-segmented" role="group" aria-label="${esc(t('settings.theme'))}">
+          ${themeBtn('light', t('settings.light'), 'sun')}
+          ${themeBtn('dark', t('settings.dark'), 'moon')}
+          ${themeBtn('system', t('settings.system'), 'monitor')}
         </div>
       </div>
       <div class="ml-setting-stack">
-        <span class="ml-setting-name">Accent color</span>
+        <span class="ml-setting-name">${esc(t('settings.accent'))}</span>
         <div class="ml-color-swatches">
           ${(Object.keys(ACCENT_PALETTES) as AccentColor[])
             .map(
@@ -1715,8 +1807,8 @@ function renderInpageSettings(): void {
                 class="ml-swatch ${currentPrefs.accentColor === color ? 'active' : ''}"
                 data-color-val="${color}"
                 style="background-color: ${ACCENT_PALETTES[color].primary};"
-                title="${ACCENT_PALETTES[color].name}"
-                aria-label="${ACCENT_PALETTES[color].name}"
+                title="${esc(t(`accent.${color}` as const))}"
+                aria-label="${esc(t(`accent.${color}` as const))}"
               ></button>
             `
             )
@@ -1750,12 +1842,9 @@ function renderInpageSettings(): void {
     const savedEl = document.getElementById('ml-saved-count');
     const historyEl = document.getElementById('ml-history-count');
     const clearBtn = document.getElementById('ml-clear-history-btn') as HTMLButtonElement | null;
-    if (savedEl) savedEl.textContent = saved > 0 ? `${saved} saved · track prices and compare` : 'Nothing saved yet';
+    if (savedEl) savedEl.textContent = saved > 0 ? tn('settings.savedCount', saved) : t('settings.nothingSaved');
     if (historyEl) {
-      historyEl.textContent =
-        history > 0
-          ? `${history} past ${history === 1 ? 'analysis' : 'analyses'} stored on this device`
-          : 'No past analyses stored';
+      historyEl.textContent = history > 0 ? tn('settings.historyCount', history) : t('settings.noHistory');
     }
     if (clearBtn) clearBtn.disabled = history === 0;
   };
@@ -1764,22 +1853,22 @@ function renderInpageSettings(): void {
   document.getElementById('ml-clear-history-btn')?.addEventListener('click', async () => {
     await clearAnalysisHistory().catch(() => {});
     await updateCounts();
-    showToast('Analysis history cleared');
+    showToast(t('toast.historyCleared'));
   });
 
   document.getElementById('ml-settings-portal-btn')?.addEventListener('click', async () => {
     const portalBtn = document.getElementById('ml-settings-portal-btn') as HTMLButtonElement | null;
     if (portalBtn) {
-      setButtonLabel(portalBtn, 'Opening…');
+      setButtonLabel(portalBtn, t('settings.opening'));
       portalBtn.disabled = true;
     }
     const res = await openStripeCustomerPortal();
     if (portalBtn) {
-      portalBtn.innerHTML = `<span>Manage billing</span>${icon('external')}`;
+      portalBtn.innerHTML = `<span>${esc(t('settings.manageBilling'))}</span>${icon('external')}`;
       portalBtn.disabled = false;
     }
     if (!res.success) {
-      alert(res.error || 'Couldn’t open the billing portal. Please try again.');
+      alert(res.error || t('settings.portalError'));
     }
   });
 
@@ -1788,8 +1877,16 @@ function renderInpageSettings(): void {
     applyTheme();
     checkAndInject();
 
-    showToast('Saved');
+    showToast(t('toast.prefsSaved'));
   };
+
+  document.getElementById('pref-language')?.addEventListener('change', async (e) => {
+    const value = (e.target as HTMLSelectElement).value as LanguagePreference;
+    currentPrefs = await savePreferences({ language: value });
+    // Re-render everything in the new language (settings stays open)
+    if (refreshLocale()) applyLocaleToUi();
+    showToast(t('toast.prefsSaved'));
+  });
 
   document.getElementById('pref-grid-badges')?.addEventListener('change', (e) => {
     triggerSave({ showGridBadges: (e.target as HTMLInputElement).checked });

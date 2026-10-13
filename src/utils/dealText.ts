@@ -4,15 +4,15 @@
 
 import type { AIProductAnalysis } from '../types/ai';
 import { money } from './format';
+import { t } from '../i18n';
 
 export type OfferTone = 'ai' | 'friendly' | 'direct' | 'cash';
 
-export const OFFER_TONES: Array<{ id: OfferTone; label: string }> = [
-  { id: 'ai', label: 'AI draft' },
-  { id: 'friendly', label: 'Friendly' },
-  { id: 'direct', label: 'Direct' },
-  { id: 'cash', label: 'Cash pickup' },
-];
+export const OFFER_TONES: OfferTone[] = ['ai', 'friendly', 'direct', 'cash'];
+
+export function offerToneLabel(tone: OfferTone): string {
+  return t(`offer.tone.${tone}` as const);
+}
 
 /** Short, natural item name for messages ("PlayStation 5" rather than the full spec line). */
 export function shortItemName(analysis: Pick<AIProductAnalysis, 'identifiedProduct'>, fallback = 'item'): string {
@@ -29,16 +29,16 @@ export interface OfferInput {
 }
 
 export function buildOfferMessage(tone: Exclude<OfferTone, 'ai'>, { item, amount, fairAverage }: OfferInput): string {
-  const offer = money(amount);
+  const params = { item, amount: money(amount) };
   switch (tone) {
     case 'friendly':
-      return `Hi! I'm interested in your ${item}. Would you consider ${offer}? I'm flexible on pickup time. Thanks!`;
+      return t('offer.msg.friendly', params);
     case 'direct':
       return fairAverage && fairAverage > 0
-        ? `Hi, I'd like to buy your ${item}. Similar ones are selling for around ${money(fairAverage)}, so I can offer ${offer}. Let me know if that works.`
-        : `Hi, I'd like to buy your ${item}. I can offer ${offer}. Let me know if that works.`;
+        ? t('offer.msg.directMarket', { ...params, market: money(fairAverage) })
+        : t('offer.msg.direct', params);
     case 'cash':
-      return `Hi! Is your ${item} still available? I can pick it up today and pay ${offer} cash.`;
+      return t('offer.msg.cash', params);
   }
 }
 
@@ -51,14 +51,6 @@ export function offerStep(amount: number): number {
   return 100;
 }
 
-const VERDICT_TEXT: Record<string, string> = {
-  buy_now: 'Buy now',
-  good_buy: 'Good buy',
-  negotiate: 'Negotiate first',
-  caution: 'Caution',
-  walk_away: 'Walk away',
-};
-
 /** Plain-text report suitable for pasting into a message or note. */
 export function buildDealSummary(
   analysis: AIProductAnalysis,
@@ -68,33 +60,33 @@ export function buildDealSummary(
   const fair = p?.fairUsedMarketRange;
   const lines: string[] = [];
 
-  lines.push(`MarketLens AI — ${analysis.identifiedProduct?.name || context.title || 'Listing'}`);
+  lines.push(`MarketLens AI — ${analysis.identifiedProduct?.name || context.title || t('results.marketItem')}`);
 
-  const verdict = analysis.buyVerdict ? VERDICT_TEXT[analysis.buyVerdict] : null;
-  const score = typeof analysis.buyScore === 'number' ? `${Math.round(analysis.buyScore)}/100` : null;
-  const headline = [verdict, score && `score ${score}`].filter(Boolean).join(', ');
+  const verdict = analysis.buyVerdict ? t(`verdict.${analysis.buyVerdict}` as const) : null;
+  const score =
+    typeof analysis.buyScore === 'number' ? t('summary.score', { score: Math.round(analysis.buyScore) }) : null;
+  const headline = [verdict, score].filter(Boolean).join(', ');
   if (headline || analysis.buyVerdictLabel) {
-    lines.push(`Verdict: ${[headline, analysis.buyVerdictLabel].filter(Boolean).join(' — ')}`);
+    lines.push(t('summary.verdict', { text: [headline, analysis.buyVerdictLabel].filter(Boolean).join(' — ') }));
   }
 
-  const asking = context.priceRaw || money(p?.askingPrice);
-  const priceParts = [`Asking ${asking}`];
-  if (fair) priceParts.push(`fair used ${money(fair.min)}–${money(fair.max)} (avg ${money(fair.fairAverage)})`);
-  if (p?.estimatedNewPrice) priceParts.push(`retail ${money(p.estimatedNewPrice)}`);
-  lines.push(`Price: ${priceParts.join(' · ')}`);
+  const priceParts = [t('summary.asking', { amount: context.priceRaw || money(p?.askingPrice) })];
+  if (fair) {
+    priceParts.push(t('summary.fair', { min: money(fair.min), max: money(fair.max), avg: money(fair.fairAverage) }));
+  }
+  if (p?.estimatedNewPrice) priceParts.push(t('summary.retail', { amount: money(p.estimatedNewPrice) }));
+  lines.push(t('summary.price', { text: priceParts.join(' · ') }));
 
   if (analysis.negotiation?.recommendedOffer) {
-    lines.push(`Suggested offer: ${money(analysis.negotiation.recommendedOffer)}`);
+    lines.push(t('summary.offer', { amount: money(analysis.negotiation.recommendedOffer) }));
   }
 
-  if (analysis.visualAudit?.conditionScore) {
-    const grade = analysis.visualAudit.conditionScore;
-    lines.push(`Condition: ${grade.charAt(0).toUpperCase()}${grade.slice(1)}`);
-  }
+  const grade = analysis.visualAudit?.conditionScore;
+  if (grade) lines.push(t('summary.condition', { grade: t(`condition.${grade}` as const) }));
 
   const flags = analysis.redFlags ?? [];
   if (flags.length > 0) {
-    lines.push('Watch out for:');
+    lines.push(t('summary.watchOut'));
     flags.forEach((f) => lines.push(`  • ${f.text}`));
   }
 

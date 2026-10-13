@@ -1,0 +1,22 @@
+{
+  "extName": {
+    "message": "MarketLens AI — स्मार्ट ख़रीदारी सहायक",
+    "description": "Extension name (max 75 characters)"
+  },
+  "extDescription": {
+    "message": "सेकंड-हैंड लिस्टिंग का AI मूल्यांकन और धोखाधड़ी की पहचान। कीमतें जाँचता है, कमियाँ पकड़ता है, दोबारा बेचने का मुनाफ़ा बताता है।",
+    "description": "Store / extensions page description (max 132 characters)"
+  },
+  "actionTitle": {
+    "message": "MarketLens AI — डील विश्लेषण खोलें",
+    "description": "Toolbar button tooltip"
+  },
+  "commandOpen": {
+    "message": "MarketLens पैनल खोलें",
+    "description": "Keyboard shortcut description"
+  },
+  "contextMenuTitle": {
+    "message": "इस डील का MarketLens AI से विश्लेषण करें",
+    "description": "Right-click menu item"
+  }
+}

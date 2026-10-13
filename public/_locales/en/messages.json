@@ -1,0 +1,22 @@
+{
+  "extName": {
+    "message": "MarketLens AI — Smart Buying Assistant",
+    "description": "Extension name (max 75 characters)"
+  },
+  "extDescription": {
+    "message": "AI deal appraisals & scam detection for marketplace listings. Inspects prices, detects flaws, and calculates flip profit.",
+    "description": "Store / extensions page description (max 132 characters)"
+  },
+  "actionTitle": {
+    "message": "MarketLens AI — Open deal analysis",
+    "description": "Toolbar button tooltip"
+  },
+  "commandOpen": {
+    "message": "Open the MarketLens drawer",
+    "description": "Keyboard shortcut description"
+  },
+  "contextMenuTitle": {
+    "message": "Analyze this deal with MarketLens AI",
+    "description": "Right-click menu item"
+  }
+}

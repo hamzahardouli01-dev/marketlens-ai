@@ -6,6 +6,7 @@
 
 import 'dotenv/config';
 import { harmonizeAnalysis } from './harmonizer.js';
+import { RESPONSE_LANGUAGES, resolveResponseLanguage } from './languages.js';
 
 export interface UniversalListingContext {
   url: string;
@@ -17,6 +18,8 @@ export interface UniversalListingContext {
   imageBase64?: string;
   imageMimeType?: string;
   additionalImagesBase64?: Array<{ base64: string; mimeType?: string }>;
+  /** Interface language code from the extension, e.g. 'fr' */
+  responseLanguage?: string;
 }
 
 export function buildSystemPrompt(context: UniversalListingContext): string {
@@ -43,6 +46,11 @@ LISTING CONTEXT:
 - Currency Context: ${context.currency || 'USD'}
 - Description: ${context.description || 'No description provided.'}
 - Listing URL: ${context.url || ''}
+
+RESPONSE LANGUAGE:
+- Write every human-readable text value in ${RESPONSE_LANGUAGES[resolveResponseLanguage(context.responseLanguage)]}: buyVerdictLabel, redFlags[].text, questionsToAsk, identifiedProduct.category, identifiedProduct.conditionReport, pricing.dealVerdictLabel, flipPotential.flipSummary, flipPotential.resaleTimeframe, visualAudit.detectedFlawsOrWear, visualAudit.accessoriesVisible, negotiation.counterOfferMessage and aiSummary.
+- Keep all JSON keys and enum values (buyVerdict, severity, dealRating, recommendation, resaleDifficulty, conditionScore) exactly as written in the schema, in English.
+- Keep product, brand and model names as the seller wrote them. Use Western digits for numbers and prices.
 
 REQUIREMENTS:
 1. Real-Time Web Search & Grounding:

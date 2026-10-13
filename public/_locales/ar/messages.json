@@ -1,0 +1,22 @@
+{
+  "extName": {
+    "message": "MarketLens AI — مساعد الشراء الذكي",
+    "description": "Extension name (max 75 characters)"
+  },
+  "extDescription": {
+    "message": "تقييم العروض بالذكاء الاصطناعي وكشف الاحتيال في إعلانات المستعمل. يفحص الأسعار ويكتشف العيوب ويحسب ربح إعادة البيع.",
+    "description": "Store / extensions page description (max 132 characters)"
+  },
+  "actionTitle": {
+    "message": "MarketLens AI — فتح تحليل العرض",
+    "description": "Toolbar button tooltip"
+  },
+  "commandOpen": {
+    "message": "فتح لوحة MarketLens",
+    "description": "Keyboard shortcut description"
+  },
+  "contextMenuTitle": {
+    "message": "حلّل هذا العرض باستخدام MarketLens AI",
+    "description": "Right-click menu item"
+  }
+}

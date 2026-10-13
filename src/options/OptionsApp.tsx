@@ -13,28 +13,18 @@ import {
 } from '../storage/watchlist';
 import { SITE_LABELS } from '../utils/listing';
 import { money, timeAgo } from '../utils/format';
+import { t, tn } from '../i18n';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STATUSES = Object.keys(WATCH_STATUS_LABELS) as WatchStatus[];
+
+const statusLabel = (s: WatchStatus) => t(`status.${s}` as const);
 const MAX_COMPARE = 5;
 
 type SortKey = 'recent' | 'score' | 'price_asc' | 'price_drop';
 
-const SORT_LABELS: Record<SortKey, string> = {
-  recent: 'Recently saved',
-  score: 'Best buy score',
-  price_asc: 'Lowest price',
-  price_drop: 'Biggest price drop',
-};
-
-const VERDICT_TEXT: Record<string, string> = {
-  buy_now: 'Buy now',
-  good_buy: 'Good buy',
-  negotiate: 'Negotiate',
-  caution: 'Caution',
-  walk_away: 'Walk away',
-};
+const SORT_KEYS: SortKey[] = ['recent', 'score', 'price_asc', 'price_drop'];
 
 function scoreTone(score: number): 'positive' | 'warning' | 'danger' {
   if (score >= 70) return 'positive';
@@ -49,7 +39,7 @@ function safeUrl(url: string): string {
 
 function itemPrice(item: WatchlistItem): string {
   if (typeof item.price === 'number') return money(item.price);
-  return item.priceRaw || 'No price';
+  return item.priceRaw || t('options.noPrice');
 }
 
 function Icon({ d }: { d: string }) {
@@ -96,7 +86,7 @@ function PriceChangeBadge({ item }: { item: WatchlistItem }) {
   return (
     <span
       className={`pill ${dropped ? 'tone-positive' : 'tone-warning'}`}
-      title={`${dropped ? 'Dropped' : 'Up'} from ${money(change.from)} when you saved it`}
+      title={t(dropped ? 'options.droppedFrom' : 'options.upFrom', { amount: money(change.from) })}
     >
       <Icon d={dropped ? ICONS.down : ICONS.up} />
       {money(Math.abs(change.delta))}
@@ -106,9 +96,9 @@ function PriceChangeBadge({ item }: { item: WatchlistItem }) {
 
 function ScorePill({ item }: { item: WatchlistItem }) {
   const score = item.analysis?.buyScore;
-  if (typeof score !== 'number') return <span className="pill">Not analyzed</span>;
+  if (typeof score !== 'number') return <span className="pill">{t('options.notAnalyzed')}</span>;
   const rounded = Math.round(score);
-  const verdict = item.analysis?.buyVerdict ? VERDICT_TEXT[item.analysis.buyVerdict] : null;
+  const verdict = item.analysis?.buyVerdict ? t(`verdict.${item.analysis.buyVerdict}` as const) : null;
   return (
     <span className={`pill has-dot tone-${scoreTone(rounded)}`} title={item.analysis?.buyVerdictLabel}>
       {rounded}
@@ -148,33 +138,34 @@ function NotesModal({
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="notes-title">
-        <h2 id="notes-title">{item.title}</h2>
+        <h2 id="notes-title" dir="auto">{item.title}</h2>
         <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginBottom: 18 }}>
-          Notes are stored only on this device.
+          {t('options.notesLocal')}
         </p>
         <div className="form-row" style={{ marginBottom: 14 }}>
-          <label className="form-label" htmlFor="edit-status">Status</label>
+          <label className="form-label" htmlFor="edit-status">{t('options.status')}</label>
           <select value={status} onChange={(e) => setStatus(e.target.value as WatchStatus)} id="edit-status">
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{WATCH_STATUS_LABELS[s]}</option>
+              <option key={s} value={s}>{statusLabel(s)}</option>
             ))}
           </select>
         </div>
         <div className="form-row">
-          <label className="form-label" htmlFor="edit-notes">Notes</label>
+          <label className="form-label" htmlFor="edit-notes">{t('options.notes')}</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Seller name, pickup details, questions to ask…"
+            placeholder={t('options.notesPlaceholder')}
             rows={5}
             id="edit-notes"
+            dir="auto"
             autoFocus
           />
         </div>
         <div className="modal-actions">
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? t('options.saving') : t('options.saveChanges')}
           </button>
         </div>
       </div>
@@ -211,18 +202,18 @@ function SavedCard({
       <div className="wl-head">
         <Thumb src={item.imageUrl} />
         <div className="wl-head-text">
-          <a className="wl-title" href={safeUrl(item.url)} target="_blank" rel="noreferrer" title={item.title}>
+          <a className="wl-title" href={safeUrl(item.url)} target="_blank" rel="noreferrer" title={item.title} dir="auto">
             {item.title}
           </a>
           <div className="wl-sub">
-            {SITE_LABELS[item.site] ?? 'Web'} · saved {timeAgo(item.savedAt)}
+            {t('options.cardSub', { site: SITE_LABELS[item.site] ?? 'Web', time: timeAgo(item.savedAt) })}
           </div>
         </div>
         <div className="wl-head-actions">
-          <a className="btn btn-ghost btn-sm" href={safeUrl(item.url)} target="_blank" rel="noreferrer" title="Open listing" aria-label="Open listing">
+          <a className="btn btn-ghost btn-sm" href={safeUrl(item.url)} target="_blank" rel="noreferrer" title={t('options.openListing')} aria-label={t('options.openListing')}>
             <Icon d={ICONS.external} />
           </a>
-          <button className="btn btn-ghost btn-sm" onClick={onDelete} id={`delete-${item.id}`} title="Remove" aria-label="Remove">
+          <button className="btn btn-ghost btn-sm" onClick={onDelete} id={`delete-${item.id}`} title={t('options.remove')} aria-label={t('options.remove')}>
             <Icon d={ICONS.trash} />
           </button>
         </div>
@@ -239,36 +230,36 @@ function SavedCard({
         <div className="wl-facts">
           {fair && (
             <div>
-              <span>Fair value</span>
+              <span>{t('results.fairValue')}</span>
               <strong>{money(fair.min)} – {money(fair.max)}</strong>
             </div>
           )}
           {offer ? (
             <div>
-              <span>Suggested offer</span>
+              <span>{t('results.suggestedOffer')}</span>
               <strong>{money(offer)}</strong>
             </div>
           ) : null}
         </div>
       )}
 
-      {item.notes && <div className="saved-card-notes">{item.notes}</div>}
+      {item.notes && <div className="saved-card-notes" dir="auto">{item.notes}</div>}
 
       <div className="saved-card-actions wl-actions">
         <select
           className="wl-status-select"
           value={item.status}
           onChange={(e) => onStatusChange(e.target.value as WatchStatus)}
-          aria-label="Status"
+          aria-label={t('options.status')}
           id={`status-${item.id}`}
         >
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{WATCH_STATUS_LABELS[s]}</option>
+            <option key={s} value={s}>{statusLabel(s)}</option>
           ))}
         </select>
         <button className="btn btn-secondary btn-sm" onClick={onEdit} id={`edit-${item.id}`}>
           <Icon d={ICONS.edit} />
-          Notes
+          {t('options.notes')}
         </button>
         <button
           className={`btn btn-sm ${isSelectedForCompare ? 'btn-primary' : 'btn-secondary'}`}
@@ -276,10 +267,10 @@ function SavedCard({
           id={`compare-${item.id}`}
           aria-pressed={isSelectedForCompare}
           disabled={!isSelectedForCompare && compareFull}
-          title={!isSelectedForCompare && compareFull ? `You can compare up to ${MAX_COMPARE} listings` : undefined}
+          title={!isSelectedForCompare && compareFull ? t('options.compareMax', { max: MAX_COMPARE }) : undefined}
         >
           <Icon d={isSelectedForCompare ? ICONS.check : ICONS.compare} />
-          {isSelectedForCompare ? 'Comparing' : 'Compare'}
+          {isSelectedForCompare ? t('options.comparing') : t('options.compare')}
         </button>
       </div>
     </div>
@@ -302,74 +293,74 @@ function CompareTable({ items }: { items: WatchlistItem[] }) {
 
   const rows: CompareRow[] = [
     {
-      label: 'Price',
+      label: t('options.row.price'),
       render: (i) => (
         <span className="compare-price">
           {itemPrice(i)}
-          {lowestPrice !== null && i.price === lowestPrice && <span className="pill tone-positive">Lowest</span>}
+          {lowestPrice !== null && i.price === lowestPrice && <span className="pill tone-positive">{t('options.lowest')}</span>}
         </span>
       ),
     },
     {
-      label: 'Since saved',
-      render: (i) => (priceChangeSinceSaved(i) ? <PriceChangeBadge item={i} /> : 'No change'),
+      label: t('options.row.sinceSaved'),
+      render: (i) => (priceChangeSinceSaved(i) ? <PriceChangeBadge item={i} /> : t('options.noChange')),
       muted: (i) => !priceChangeSinceSaved(i),
     },
     {
-      label: 'Buy score',
+      label: t('options.row.buyScore'),
       render: (i) => (
         <span className="compare-inline">
           <ScorePill item={i} />
-          {bestScore !== null && i.analysis?.buyScore === bestScore && <span className="pill tone-accent">Best</span>}
+          {bestScore !== null && i.analysis?.buyScore === bestScore && <span className="pill tone-accent">{t('options.best')}</span>}
         </span>
       ),
     },
-    { label: 'Verdict', render: (i) => i.analysis?.buyVerdictLabel || '—', muted: (i) => !i.analysis?.buyVerdictLabel },
+    { label: t('options.row.verdict'), render: (i) => i.analysis?.buyVerdictLabel || '—', muted: (i) => !i.analysis?.buyVerdictLabel },
     {
-      label: 'Fair used range',
+      label: t('options.row.fairRange'),
       render: (i) => {
         const f = i.analysis?.pricing?.fairUsedMarketRange;
-        return f ? `${money(f.min)} – ${money(f.max)} (avg ${money(f.fairAverage)})` : '—';
+        return f ? t('options.fairWithAvg', { min: money(f.min), max: money(f.max), avg: money(f.fairAverage) }) : '—';
       },
       muted: (i) => !i.analysis?.pricing?.fairUsedMarketRange,
     },
     {
-      label: 'Suggested offer',
+      label: t('options.row.offer'),
       render: (i) => (i.analysis?.negotiation?.recommendedOffer ? money(i.analysis.negotiation.recommendedOffer) : '—'),
       muted: (i) => !i.analysis?.negotiation?.recommendedOffer,
     },
     {
-      label: 'Retail when new',
+      label: t('options.row.retail'),
       render: (i) => (i.analysis?.pricing?.estimatedNewPrice ? money(i.analysis.pricing.estimatedNewPrice) : '—'),
       muted: (i) => !i.analysis?.pricing?.estimatedNewPrice,
     },
     {
-      label: 'Condition',
+      label: t('options.row.condition'),
       render: (i) => {
         const c = i.analysis?.visualAudit?.conditionScore;
-        return c ? c.charAt(0).toUpperCase() + c.slice(1) : '—';
+        return c ? t(`condition.${c}` as const) : '—';
       },
       muted: (i) => !i.analysis?.visualAudit?.conditionScore,
     },
     {
-      label: 'Risk flags',
+      label: t('options.row.risks'),
       render: (i) => {
         if (!i.analysis) return '—';
         const flags = i.analysis.redFlags ?? [];
-        if (flags.length === 0) return 'None found';
+        if (flags.length === 0) return t('options.noneFound');
         return (
           <ul className="compare-list">
             {flags.map((f, n) => (
-              <li key={n} className={`sev-${f.severity}`}>{f.text}</li>
+              <li key={n} className={`sev-${f.severity}`} dir="auto">{f.text}</li>
             ))}
           </ul>
         );
       },
       muted: (i) => !i.analysis,
     },
-    { label: 'Site', render: (i) => SITE_LABELS[i.site] ?? 'Web' },
-    { label: 'Status', render: (i) => WATCH_STATUS_LABELS[i.status] },
-    { label: 'Your notes', render: (i) => i.notes || '—', muted: (i) => !i.notes },
+    { label: t('options.row.site'), render: (i) => SITE_LABELS[i.site] ?? 'Web' },
+    { label: t('options.row.status'), render: (i) => statusLabel(i.status) },
+    { label: t('options.row.notes'), render: (i) => i.notes || '—', muted: (i) => !i.notes },
   ];
 
   return (
@@ -383,8 +374,8 @@ function CompareTable({ items }: { items: WatchlistItem[] }) {
                 <div className="compare-head">
                   <Thumb src={i.imageUrl} />
                   <div>
-                    <div className="compare-head-title">{i.title}</div>
-                    <a href={safeUrl(i.url)} target="_blank" rel="noreferrer">Open listing</a>
+                    <div className="compare-head-title" dir="auto">{i.title}</div>
+                    <a href={safeUrl(i.url)} target="_blank" rel="noreferrer">{t('options.openListing')}</a>
                   </div>
                 </div>
               </th>
@@ -477,7 +468,7 @@ export default function OptionsApp() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Remove this listing from your saved list?')) return;
+    if (!window.confirm(t('options.confirmRemove'))) return;
     await removeFromWatchlist(id);
     setCompareIds((prev) => {
       const n = new Set(prev);
@@ -522,21 +513,21 @@ export default function OptionsApp() {
           <div className="options-logo-icon"><Icon d={ICONS.logo} /></div>
           <div>
             <h1>MarketLens AI</h1>
-            <span>Saved listings</span>
+            <span>{t('options.subtitle')}</span>
           </div>
         </div>
         <div className="options-nav">
           <button className={`options-nav-btn ${view === 'saved' ? 'active' : ''}`} onClick={() => setView('saved')} id="nav-saved">
-            Saved{items.length > 0 ? ` · ${items.length}` : ''}
+            {t('options.navSaved')}{items.length > 0 ? ` · ${items.length}` : ''}
           </button>
           <button
             className={`options-nav-btn ${view === 'compare' ? 'active' : ''}`}
             onClick={() => setView('compare')}
             id="nav-compare"
             disabled={compareIds.size < 2}
-            title={compareIds.size < 2 ? 'Select 2 or more listings to compare' : undefined}
+            title={compareIds.size < 2 ? t('options.compareHint') : undefined}
           >
-            Compare{compareIds.size >= 2 ? ` · ${compareIds.size}` : ''}
+            {t('options.navCompare')}{compareIds.size >= 2 ? ` · ${compareIds.size}` : ''}
           </button>
         </div>
       </div>
@@ -550,14 +541,14 @@ export default function OptionsApp() {
                   <input
                     className="search-input"
                     type="search"
-                    placeholder="Search title, notes or category…"
+                    placeholder={t('options.search')}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     id="search-saved"
                   />
-                  <select className="wl-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Sort" id="sort-saved">
-                    {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
-                      <option key={k} value={k}>{SORT_LABELS[k]}</option>
+                  <select className="wl-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label={t('options.sortAria')} id="sort-saved">
+                    {SORT_KEYS.map((k) => (
+                      <option key={k} value={k}>{t(`options.sort.${k}` as const)}</option>
                     ))}
                   </select>
                 </div>
@@ -565,17 +556,17 @@ export default function OptionsApp() {
                   {compareIds.size >= 2 && (
                     <button className="btn btn-primary btn-sm" onClick={() => setView('compare')} id="go-compare-btn">
                       <Icon d={ICONS.compare} />
-                      Compare {compareIds.size}
+                      {t('options.compareN', { count: compareIds.size })}
                     </button>
                   )}
                   <button className="btn btn-secondary btn-sm" onClick={handleExport} id="export-csv-btn" disabled={visible.length === 0}>
                     <Icon d={ICONS.download} />
-                    Export CSV
+                    {t('options.export')}
                   </button>
                 </div>
               </div>
 
-              <div className="wl-filters" role="tablist" aria-label="Filter by status">
+              <div className="wl-filters" role="tablist" aria-label={t('options.filterAria')}>
                 {(['all', ...STATUSES] as Array<WatchStatus | 'all'>).map((s) => (
                   <button
                     key={s}
@@ -585,7 +576,7 @@ export default function OptionsApp() {
                     onClick={() => setStatusFilter(s)}
                     disabled={s !== 'all' && statusCounts[s] === 0 && statusFilter !== s}
                   >
-                    {s === 'all' ? 'All' : WATCH_STATUS_LABELS[s]}
+                    {s === 'all' ? t('options.all') : statusLabel(s)}
                     <span className="wl-filter-count">{statusCounts[s]}</span>
                   </button>
                 ))}
@@ -596,17 +587,21 @@ export default function OptionsApp() {
           {loading && (
             <div className="empty-state">
               <div className="spinner" />
-              <p>Loading saved listings…</p>
+              <p>{t('options.loading')}</p>
             </div>
           )}
 
           {!loading && items.length === 0 && (
             <div className="empty-state">
               <div className="icon"><Icon d={ICONS.bookmark} /></div>
-              <h2>No saved listings yet</h2>
+              <h2>{t('options.emptyTitle')}</h2>
               <p>
-                Analyze a listing on Facebook Marketplace, eBay or Craigslist, then click <strong>Save</strong> in the
-                MarketLens drawer. Saved listings track price drops and can be compared side by side.
+                {t('options.emptyBody').split('{save}').map((part, i, arr) => (
+                  <span key={i}>
+                    {part}
+                    {i < arr.length - 1 && <strong>{t('common.save')}</strong>}
+                  </span>
+                ))}
               </p>
             </div>
           )}
@@ -614,9 +609,9 @@ export default function OptionsApp() {
           {!loading && items.length > 0 && visible.length === 0 && (
             <div className="empty-state">
               <div className="icon"><Icon d={ICONS.search} /></div>
-              <p>No saved listings match these filters.</p>
+              <p>{t('options.noMatch')}</p>
               <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(''); setStatusFilter('all'); }}>
-                Clear filters
+                {t('options.clearFilters')}
               </button>
             </div>
           )}
@@ -641,17 +636,17 @@ export default function OptionsApp() {
             <div style={{ marginTop: 40 }}>
               <div className="danger-zone">
                 <div>
-                  <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>Delete all saved listings</p>
-                  <p>Permanently removes {items.length} saved {items.length === 1 ? 'listing' : 'listings'} and their notes from this device.</p>
+                  <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{t('options.deleteAllTitle')}</p>
+                  <p>{tn('options.deleteAllBody', items.length)}</p>
                 </div>
                 {clearConfirm ? (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Are you sure?</span>
-                    <button className="btn btn-danger btn-sm" onClick={handleClearAll} id="confirm-clear-all">Yes, delete all</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setClearConfirm(false)}>Cancel</button>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('options.areYouSure')}</span>
+                    <button className="btn btn-danger btn-sm" onClick={handleClearAll} id="confirm-clear-all">{t('options.yesDeleteAll')}</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setClearConfirm(false)}>{t('common.cancel')}</button>
                   </div>
                 ) : (
-                  <button className="btn btn-danger btn-sm" onClick={() => setClearConfirm(true)} id="clear-all-btn">Delete all</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => setClearConfirm(true)} id="clear-all-btn">{t('options.deleteAll')}</button>
                 )}
               </div>
             </div>
@@ -663,19 +658,19 @@ export default function OptionsApp() {
         <>
           <div className="page-toolbar">
             <div className="toolbar-left">
-              <h2>Side-by-side comparison</h2>
-              <span className="tag">{compareItems.length} listings</span>
+              <h2>{t('options.compareTitle')}</h2>
+              <span className="tag">{tn('options.listingsCount', compareItems.length)}</span>
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setView('saved')}>
+            <button className="btn btn-secondary btn-sm flip-rtl" onClick={() => setView('saved')}>
               <Icon d={ICONS.back} />
-              Back to saved
+              {t('options.backToSaved')}
             </button>
           </div>
 
           {compareItems.length < 2 ? (
             <div className="empty-state">
-              <p>Select 2–{MAX_COMPARE} saved listings to compare.</p>
-              <button className="btn btn-primary btn-sm" onClick={() => setView('saved')}>Go to saved listings</button>
+              <p>{t('options.selectToCompare', { max: MAX_COMPARE })}</p>
+              <button className="btn btn-primary btn-sm" onClick={() => setView('saved')}>{t('options.goToSaved')}</button>
             </div>
           ) : (
             <>
@@ -684,7 +679,7 @@ export default function OptionsApp() {
                 {compareItems.map((i) => (
                   <button key={i.id} className="btn btn-secondary btn-sm" onClick={() => toggleCompare(i.id)} id={`remove-compare-${i.id}`}>
                     <Icon d={ICONS.x} />
-                    Remove {i.title.length > 32 ? `${i.title.slice(0, 30)}…` : i.title}
+                    {t('options.removeNamed', { title: i.title.length > 32 ? `${i.title.slice(0, 30)}…` : i.title })}
                   </button>
                 ))}
               </div>

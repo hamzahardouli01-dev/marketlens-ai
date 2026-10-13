@@ -8,7 +8,10 @@
  * - Color Theme ('dark' | 'light' | 'system')
  * - Accent Color ('blue' | 'green' | 'purple' | 'amber' | 'red')
  * - Card Density / Compact Mode
+ * - Interface language ('auto' or a supported locale)
  */
+
+import type { LanguagePreference } from '../i18n';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type AccentColor = 'blue' | 'green' | 'purple' | 'amber' | 'red';
@@ -20,6 +23,8 @@ export interface UserPreferences {
   theme: ThemeMode;
   accentColor: AccentColor;
   compactMode: boolean;
+  /** 'auto' follows the page, then the browser language */
+  language: LanguagePreference;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -29,6 +34,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   theme: 'dark',
   accentColor: 'blue',
   compactMode: false,
+  language: 'auto',
 };
 
 const STORAGE_KEY_PREFS = 'marketlens_preferences';

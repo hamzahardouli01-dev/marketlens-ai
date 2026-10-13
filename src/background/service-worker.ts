@@ -8,7 +8,7 @@
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'marketlens-analyze',
-    title: '🔍 Analyze Deal & Flip with MarketLens AI',
+    title: chrome.i18n.getMessage('contextMenuTitle') || 'Analyze this deal with MarketLens AI',
     contexts: ['image', 'selection', 'page', 'link'],
   });
 });

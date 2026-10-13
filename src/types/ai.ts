@@ -95,4 +95,6 @@ export interface UniversalListingContext {
   imageMimeType?: string;
   galleryImages?: string[];
   additionalImagesBase64?: Array<{ base64: string; mimeType?: string }>;
+  /** UI language code (e.g. 'fr'); the AI writes its text fields in this language */
+  responseLanguage?: string;
 }

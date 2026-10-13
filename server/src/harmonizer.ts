@@ -8,6 +8,8 @@
  * 4. Deal rating alignment: Overpriced items cannot be rated "Buy Now" or "Strong Buy Flip".
  */
 
+import { harmonizerText, resolveResponseLanguage } from './languages.js';
+
 // Common historical economy car MSRP references (when new)
 const HISTORICAL_ECONOMY_MAKES = [
   'civic', 'corolla', 'camry', 'accord', 'sentra', 'altima', 'focus', 'fiesta',
@@ -31,6 +33,7 @@ export function harmonizeAnalysis(analysis: any, context?: any): any {
     return analysis;
   }
 
+  const text = harmonizerText(resolveResponseLanguage(context?.responseLanguage));
   const combinedText = `${context?.title || ''} ${analysis.identifiedProduct?.name || ''} ${context?.description || ''}`.toLowerCase();
   const year = extractModelYear(combinedText);
 
@@ -128,7 +131,7 @@ export function harmonizeAnalysis(analysis: any, context?: any): any {
     analysis.flipPotential.score = Math.min(analysis.flipPotential.score || 4, 4.8);
 
     if (exactNetProfit < 0 && (!analysis.flipPotential.flipSummary || analysis.flipPotential.flipSummary.toLowerCase().includes('profit'))) {
-      analysis.flipPotential.flipSummary = `Priced at or above open market rate. Reselling would result in a net loss of approx. $${Math.abs(exactNetProfit)}. Best for personal use only.`;
+      analysis.flipPotential.flipSummary = text.resaleLoss(`$${Math.abs(exactNetProfit)}`);
     }
   }
 
@@ -137,7 +140,7 @@ export function harmonizeAnalysis(analysis: any, context?: any): any {
     analysis.pricing.dealRating = analysis.pricing.percentageVsMarket > 30 ? 'extreme_ripoff' : 'overpriced';
     if (analysis.buyVerdict === 'buy_now' || analysis.buyVerdict === 'good_buy') {
       analysis.buyVerdict = 'negotiate';
-      analysis.buyVerdictLabel = 'Overpriced · Negotiate Offer';
+      analysis.buyVerdictLabel = text.overpricedLabel;
       if (analysis.buyScore && analysis.buyScore > 55) {
         analysis.buyScore = 48;
       }

@@ -1,0 +1,22 @@
+{
+  "extName": {
+    "message": "MarketLens AI — Asistente de compras inteligente",
+    "description": "Extension name (max 75 characters)"
+  },
+  "extDescription": {
+    "message": "Tasación de ofertas con IA y detección de estafas en anuncios. Revisa precios, detecta defectos y calcula la reventa.",
+    "description": "Store / extensions page description (max 132 characters)"
+  },
+  "actionTitle": {
+    "message": "MarketLens AI — Abrir análisis de la oferta",
+    "description": "Toolbar button tooltip"
+  },
+  "commandOpen": {
+    "message": "Abrir el panel de MarketLens",
+    "description": "Keyboard shortcut description"
+  },
+  "contextMenuTitle": {
+    "message": "Analizar esta oferta con MarketLens AI",
+    "description": "Right-click menu item"
+  }
+}

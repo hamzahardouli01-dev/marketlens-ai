@@ -1,0 +1,22 @@
+{
+  "extName": {
+    "message": "MarketLens AI — Умный помощник покупателя",
+    "description": "Extension name (max 75 characters)"
+  },
+  "extDescription": {
+    "message": "ИИ-оценка объявлений и защита от мошенников. Проверяет цены, находит дефекты и считает выгоду от перепродажи.",
+    "description": "Store / extensions page description (max 132 characters)"
+  },
+  "actionTitle": {
+    "message": "MarketLens AI — Открыть анализ сделки",
+    "description": "Toolbar button tooltip"
+  },
+  "commandOpen": {
+    "message": "Открыть панель MarketLens",
+    "description": "Keyboard shortcut description"
+  },
+  "contextMenuTitle": {
+    "message": "Проанализировать сделку с MarketLens AI",
+    "description": "Right-click menu item"
+  }
+}

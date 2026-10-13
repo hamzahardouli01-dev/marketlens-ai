@@ -20,6 +20,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       position: absolute;
       top: 8px;
       right: 8px;
+      left: auto;
       z-index: 999;
       display: inline-flex;
       align-items: center;
@@ -41,6 +42,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       user-select: none;
       pointer-events: auto;
     }
+    .ml-card-badge.is-rtl { right: auto; left: 8px; }
     .ml-card-badge:hover { background: var(--ml-accent); border-color: transparent; }
     .ml-card-badge:active { transform: scale(0.97); }
     .ml-card-badge .ml-i { width: 13px; height: 13px; flex: none; }
@@ -54,6 +56,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       position: fixed;
       bottom: 24px;
       right: 24px;
+      left: auto;
       z-index: 2147483640;
       display: inline-flex;
       align-items: center;
@@ -72,6 +75,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
       user-select: none;
     }
+    #${BTN_ID}.is-rtl { right: auto; left: 24px; }
     #${BTN_ID}:hover { background: var(--ml-accent-hover); transform: translateY(-1px); }
     #${BTN_ID}:active { transform: translateY(0); }
     #${BTN_ID}:focus-visible, .ml-card-badge:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -171,7 +175,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
 
     /* ── Keyframes ── */
     @keyframes ml-fade { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes ml-slide-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes ml-slide-in { from { transform: translateX(var(--ml-slide-from, 24px)); opacity: 0; } to { transform: none; opacity: 1; } }
     @keyframes ml-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     @keyframes ml-spin { to { transform: rotate(360deg); } }
     @keyframes ml-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
@@ -196,16 +200,20 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       flex-direction: column;
       background: var(--ml-bg);
       color: var(--ml-text);
-      border-left: 1px solid var(--ml-border);
+      border-inline-start: 1px solid var(--ml-border);
       box-shadow: var(--ml-shadow-drawer);
       font-family: var(--ml-font);
       font-size: 13px;
       line-height: 1.5;
-      text-align: left;
+      text-align: start;
       -webkit-font-smoothing: antialiased;
       animation: ml-slide-in 0.28s var(--ml-ease) both;
       overflow: hidden;
     }
+
+    ${M}[dir="rtl"] .ml-drawer { --ml-slide-from: -24px; box-shadow: 24px 0 60px rgba(0, 0, 0, 0.3); }
+    ${M}[dir="rtl"] .ml-flip-rtl .ml-i { transform: scaleX(-1); }
+    ${M} bdi { unicode-bidi: isolate; }
 
     /* ── Header ── */
     ${M} .ml-drawer-header {
@@ -249,7 +257,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       gap: 6px;
       height: 28px;
       padding: 0 10px;
-      margin-right: 6px;
+      margin-inline-end: 6px;
       border-radius: 999px;
       border: 1px solid var(--ml-border);
       background: var(--ml-surface);
@@ -293,7 +301,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
     ${M} .ml-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; min-height: 22px; }
     ${M} .ml-section-head > .ml-i { color: var(--ml-text-3); }
     ${M} .ml-section-title { font-size: 13px; font-weight: 600; color: var(--ml-text); }
-    ${M} .ml-section-meta { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+    ${M} .ml-section-meta { margin-inline-start: auto; display: flex; align-items: center; gap: 6px; }
     ${M} .ml-subhead {
       font-size: 11px;
       font-weight: 600;
@@ -394,13 +402,15 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       overflow: hidden;
     }
     ${M} .ml-keystat { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    ${M} .ml-keystat + .ml-keystat { border-left: 1px solid var(--ml-border); }
+    ${M} .ml-keystat + .ml-keystat { border-inline-start: 1px solid var(--ml-border); }
     ${M} .ml-keystat-label { font-size: 11px; color: var(--ml-text-3); font-weight: 500; white-space: nowrap; }
     ${M} .ml-keystat-value { font-size: 15px; font-weight: 650; color: var(--ml-text); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     ${M} .ml-keystat-value.is-accent { color: var(--ml-accent-text); }
 
     /* ── Price range chart ── */
     ${M} .ml-range { padding: 26px 2px 0; }
+    /* Price axis reads low → high left to right in every language */
+    ${M} .ml-range-track { direction: ltr; }
     ${M} .ml-range-track { position: relative; height: 8px; border-radius: 999px; background: var(--ml-surface-3); }
     ${M} .ml-range-band { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--ml-positive); opacity: 0.55; min-width: 6px; }
     ${M} .ml-range-tick { position: absolute; top: -4px; width: 2px; height: 16px; margin-left: -1px; border-radius: 1px; background: var(--ml-text-3); }
@@ -437,8 +447,8 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
     ${M} .ml-kv-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--ml-border); }
     ${M} .ml-kv-row:last-child { border-bottom: 0; padding-bottom: 0; }
     ${M} .ml-kv-key { color: var(--ml-text-2); }
-    ${M} .ml-kv-val { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; color: var(--ml-text); }
-    ${M} .ml-kv-val small { font-size: 12px; font-weight: 500; color: var(--ml-text-3); margin-left: 6px; }
+    ${M} .ml-kv-val { font-weight: 600; font-variant-numeric: tabular-nums; text-align: end; color: var(--ml-text); }
+    ${M} .ml-kv-val small { font-size: 12px; font-weight: 500; color: var(--ml-text-3); margin-inline-start: 6px; }
 
     /* ── Lists (flags, findings, questions) ── */
     ${M} .ml-list { display: flex; flex-direction: column; gap: 8px; }
@@ -459,7 +469,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
     ${M} .ml-bullets li > .ml-i { margin-top: 2px; color: var(--ml-text-3); width: 14px; height: 14px; }
     ${M} .ml-bullets.is-check li > .ml-i { color: var(--ml-positive); }
     ${M} .ml-bullets .ml-dot { width: 14px; height: 18px; flex: none; position: relative; }
-    ${M} .ml-bullets .ml-dot::after { content: ''; position: absolute; left: 5px; top: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--ml-text-3); }
+    ${M} .ml-bullets .ml-dot::after { content: ''; position: absolute; inset-inline-start: 5px; top: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--ml-text-3); }
 
     ${M} .ml-questions { counter-reset: mlq; display: flex; flex-direction: column; }
     ${M} .ml-questions li { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--ml-border); font-size: 12.5px; line-height: 1.5; color: var(--ml-text); }
@@ -481,7 +491,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       padding: 12px 14px;
       border-radius: var(--ml-r-md);
       background: var(--ml-surface-2);
-      border-left: 3px solid var(--ml-accent);
+      border-inline-start: 3px solid var(--ml-accent);
       font-size: 13px;
       line-height: 1.6;
       color: var(--ml-text);
@@ -571,7 +581,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
     ${M} .ml-empty-icon.tone-positive, ${M} .ml-empty-icon.tone-danger { background: var(--tone-soft); color: var(--tone); border-color: transparent; }
     ${M} .ml-empty-title { font-size: 17px; font-weight: 650; letter-spacing: -0.015em; color: var(--ml-text); }
     ${M} .ml-empty-sub { margin-top: 6px; color: var(--ml-text-2); max-width: 320px; line-height: 1.55; }
-    ${M} .ml-steps { width: 100%; margin-top: 24px; text-align: left; }
+    ${M} .ml-steps { width: 100%; margin-top: 24px; text-align: start; }
     ${M} .ml-step { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--ml-border); }
     ${M} .ml-step:first-child { border-top: 0; }
     ${M} .ml-step-num { width: 24px; height: 24px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 12px; font-weight: 600; background: var(--ml-surface-2); color: var(--ml-text-2); border: 1px solid var(--ml-border); }
@@ -587,7 +597,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
       background: var(--ml-surface-2);
       color: var(--ml-text-2);
       font-size: 12px;
-      text-align: left;
+      text-align: start;
       word-break: break-word;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
@@ -618,11 +628,11 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
     ${M} .ml-plan-price { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--ml-text); font-variant-numeric: tabular-nums; }
     ${M} .ml-plan-price small { font-size: 12px; font-weight: 500; color: var(--ml-text-3); letter-spacing: 0; }
     ${M} .ml-plan-note { font-size: 11.5px; color: var(--ml-text-3); }
-    ${M} .ml-plan-save { position: absolute; top: -9px; right: 10px; height: 18px; padding: 0 7px; border-radius: 999px; background: var(--ml-positive); color: #fff; font-size: 10.5px; font-weight: 650; display: inline-flex; align-items: center; }
+    ${M} .ml-plan-save { position: absolute; top: -9px; inset-inline-end: 10px; height: 18px; padding: 0 7px; border-radius: 999px; background: var(--ml-positive); color: #fff; font-size: 10.5px; font-weight: 650; display: inline-flex; align-items: center; }
     ${M}[data-theme="dark"] .ml-plan-save { color: #0B2A1A; }
     ${M} .ml-features { margin: 18px 0; display: flex; flex-direction: column; gap: 10px; }
     ${M} .ml-features li { display: flex; gap: 10px; align-items: flex-start; color: var(--ml-text-2); font-size: 12.5px; line-height: 1.5; }
-    ${M} .ml-features li strong { color: var(--ml-text); font-weight: 600; }
+    ${M} .ml-features li strong { display: block; color: var(--ml-text); font-weight: 600; }
     ${M} .ml-features .ml-i { color: var(--ml-positive); margin-top: 2px; width: 15px; height: 15px; }
     ${M} .ml-fineprint { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; font-size: 11.5px; color: var(--ml-text-3); }
     ${M} .ml-fineprint .ml-i { width: 12px; height: 12px; }
@@ -649,9 +659,10 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
     ${M} .ml-switch { position: relative; display: inline-block; width: 36px; height: 20px; flex: none; cursor: pointer; }
     ${M} .ml-switch input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
     ${M} .ml-slider { position: absolute; inset: 0; border-radius: 999px; background: var(--ml-surface-3); border: 1px solid var(--ml-border-strong); transition: background 0.18s ease, border-color 0.18s ease; }
-    ${M} .ml-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform 0.18s var(--ml-ease); }
+    ${M} .ml-slider::before { content: ''; position: absolute; width: 14px; height: 14px; inset-inline-start: 2px; top: 2px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform 0.18s var(--ml-ease); }
     ${M} .ml-switch input:checked + .ml-slider { background: var(--ml-accent); border-color: var(--ml-accent); }
     ${M} .ml-switch input:checked + .ml-slider::before { transform: translateX(16px); }
+    ${M}[dir="rtl"] .ml-switch input:checked + .ml-slider::before { transform: translateX(-16px); }
     ${M} .ml-switch input:focus-visible + .ml-slider { outline: 2px solid var(--ml-accent); outline-offset: 2px; }
 
     ${M} .ml-segmented { display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; gap: 3px; border-radius: var(--ml-r-md); background: var(--ml-surface-2); border: 1px solid var(--ml-border); }
@@ -689,7 +700,7 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
 
     /* ── Results toolbar ── */
     ${M} .ml-toolbar { display: flex; align-items: center; gap: 6px; }
-    ${M} .ml-toolbar-meta { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ml-text-3); white-space: nowrap; }
+    ${M} .ml-toolbar-meta { margin-inline-start: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ml-text-3); white-space: nowrap; }
     ${M} .ml-toolbar-meta .ml-i { width: 13px; height: 13px; }
     ${M} .ml-icon-btn.is-sm { width: 28px; height: 28px; }
     ${M} .ml-btn-secondary.is-active { color: var(--ml-accent-text); border-color: color-mix(in srgb, var(--ml-accent) 45%, transparent); background: var(--ml-accent-tint); }
@@ -728,9 +739,22 @@ export function buildInpageStyles(BTN_ID: string, MODAL_ID: string): string {
     ${M} .ml-tip { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; }
     ${M} .ml-tip > span { display: inline-flex; align-items: center; gap: 3px; flex-wrap: wrap; justify-content: center; }
 
+    ${M} .ml-select {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px;
+      border-radius: var(--ml-r-md);
+      border: 1px solid var(--ml-border-strong);
+      background: var(--ml-surface);
+      color: var(--ml-text);
+      font: 500 13px var(--ml-font);
+      cursor: pointer;
+    }
+    ${M} .ml-select:focus-visible { outline: 2px solid var(--ml-accent); outline-offset: 1px; }
+
     /* ── Small screens ── */
     @media (max-width: 480px) {
-      ${M} .ml-drawer { width: 100vw; border-left: 0; }
+      ${M} .ml-drawer { width: 100vw; border-inline-start: 0; }
       ${M} .ml-keystat-value { font-size: 14px; }
     }
 

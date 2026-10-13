@@ -1,0 +1,22 @@
+{
+  "extName": {
+    "message": "MarketLens AI — Smarter Kaufassistent",
+    "description": "Extension name (max 75 characters)"
+  },
+  "extDescription": {
+    "message": "KI-Bewertung von Kleinanzeigen und Betrugserkennung. Prüft Preise, erkennt Mängel und berechnet den Wiederverkaufswert.",
+    "description": "Store / extensions page description (max 132 characters)"
+  },
+  "actionTitle": {
+    "message": "MarketLens AI — Analyse öffnen",
+    "description": "Toolbar button tooltip"
+  },
+  "commandOpen": {
+    "message": "MarketLens-Seitenleiste öffnen",
+    "description": "Keyboard shortcut description"
+  },
+  "contextMenuTitle": {
+    "message": "Dieses Angebot mit MarketLens AI analysieren",
+    "description": "Right-click menu item"
+  }
+}

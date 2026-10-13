@@ -2,6 +2,8 @@
  * MarketLens AI — Display helpers for the in-page drawer.
  */
 
+import { getDir, intlLocale, t } from '../i18n';
+
 /** Escape text for safe interpolation into innerHTML (text or attribute context). */
 export function esc(value: unknown): string {
   return String(value ?? '')
@@ -16,7 +18,9 @@ export function esc(value: unknown): string {
 export function money(value: number | null | undefined): string {
   if (typeof value !== 'number' || !isFinite(value)) return '—';
   const sign = value < 0 ? '−' : '';
-  return `${sign}$${Math.round(Math.abs(value)).toLocaleString('en-US')}`;
+  const text = `${sign}$${Math.round(Math.abs(value)).toLocaleString('en-US')}`;
+  // In right-to-left text (Arabic) "$320" would otherwise render as "320$"; isolate it as left-to-right
+  return getDir() === 'rtl' ? `\u2066${text}\u2069` : text;
 }
 
 export interface PriceScaleInput {
@@ -74,18 +78,19 @@ export function buildPriceScale(input: PriceScaleInput): PriceScale {
   };
 }
 
-/** Short relative time, e.g. "just now", "5 min ago", "3 days ago". */
+/** Short relative time in the active language, e.g. "5 min ago", "yesterday", "il y a 3 jours". */
 export function timeAgo(timestamp: number, now: number = Date.now()): string {
   const seconds = Math.max(0, Math.round((now - timestamp) / 1000));
-  if (seconds < 45) return 'just now';
+  if (seconds < 45) return t('time.justNow');
+
+  const rtf = new Intl.RelativeTimeFormat(intlLocale(), { numeric: 'auto', style: 'long' });
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 60) return rtf.format(-minutes, 'minute');
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+  if (hours < 24) return rtf.format(-hours, 'hour');
   const days = Math.round(hours / 24);
-  if (days < 30) return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+  if (days < 30) return rtf.format(-days, 'day');
   const months = Math.round(days / 30);
-  if (months < 12) return `${months} ${months === 1 ? 'month' : 'months'} ago`;
-  const years = Math.round(months / 12);
-  return `${years} ${years === 1 ? 'year' : 'years'} ago`;
+  if (months < 12) return rtf.format(-months, 'month');
+  return rtf.format(-Math.round(months / 12), 'year');
 }

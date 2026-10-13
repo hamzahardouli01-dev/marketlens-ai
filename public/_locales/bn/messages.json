@@ -1,0 +1,22 @@
+{
+  "extName": {
+    "message": "MarketLens AI — স্মার্ট কেনাকাটা সহকারী",
+    "description": "Extension name (max 75 characters)"
+  },
+  "extDescription": {
+    "message": "পুরনো জিনিসের বিজ্ঞাপনের AI মূল্যায়ন ও প্রতারণা শনাক্তকরণ। দাম যাচাই করে, ত্রুটি খোঁজে ও পুনর্বিক্রয়ের লাভ হিসাব করে।",
+    "description": "Store / extensions page description (max 132 characters)"
+  },
+  "actionTitle": {
+    "message": "MarketLens AI — ডিল বিশ্লেষণ খুলুন",
+    "description": "Toolbar button tooltip"
+  },
+  "commandOpen": {
+    "message": "MarketLens প্যানেল খুলুন",
+    "description": "Keyboard shortcut description"
+  },
+  "contextMenuTitle": {
+    "message": "MarketLens AI দিয়ে এই ডিল বিশ্লেষণ করুন",
+    "description": "Right-click menu item"
+  }
+}
