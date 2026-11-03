@@ -5,6 +5,27 @@
  * message routing, and CORS-free image base64 conversion for Gemini Vision.
  */
 
+import { getBackendUrl } from '../services/backendApi';
+
+const MAX_IMAGE_DIM = 768;
+const WARMUP_INTERVAL_MS = 4 * 60 * 1000;
+let lastWarmupAt = 0;
+
+/** Downscales a fetched photo so Gemini gets a small JPEG instead of the full original. */
+async function shrinkImage(blob: Blob): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const scale = Math.min(1, MAX_IMAGE_DIM / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && blob.size < 200_000) return blob;
+    const canvas = new OffscreenCanvas(Math.round(bitmap.width * scale), Math.round(bitmap.height * scale));
+    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    return await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.8 });
+  } catch {
+    return blob; // unsupported format: send as-is
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'marketlens-analyze',
@@ -84,6 +105,19 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  // Wakes a sleeping backend while the user is still reading the listing,
+  // so the appraisal does not also pay for a cold start.
+  if (message.type === 'WARM_BACKEND') {
+    if (Date.now() - lastWarmupAt > WARMUP_INTERVAL_MS) {
+      lastWarmupAt = Date.now();
+      getBackendUrl()
+        .then((url) => fetch(`${url}/health`))
+        .catch(() => {});
+    }
+    sendResponse({ ok: true });
+    return false;
+  }
+
   if (message.type === 'OPEN_OPTIONS') {
     chrome.runtime.openOptionsPage();
     sendResponse({ ok: true });
@@ -105,7 +139,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           sendResponse({ success: false, error: `HTTP ${res.status} when fetching image.` });
           return;
         }
-        const blob = await res.blob();
+        const blob = await shrinkImage(await res.blob());
         const mimeType = blob.type || 'image/jpeg';
         const buffer = await blob.arrayBuffer();
         const bytes = new Uint8Array(buffer);

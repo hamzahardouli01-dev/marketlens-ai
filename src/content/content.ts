@@ -19,6 +19,12 @@ try {
   console.warn('[MarketLens AI] In-page widget initialization warning:', e);
 }
 
+try {
+  chrome.runtime.sendMessage({ type: 'WARM_BACKEND' }).catch(() => {});
+} catch {
+  // extension context unavailable (e.g. reloaded)
+}
+
 type ContentMessage =
   | { type: 'EXTRACT_AI_CONTEXT' }
   | { type: 'EXTRACT_LISTING' }

@@ -623,14 +623,14 @@ export async function convertImageToBase64(
       const canvas = document.createElement('canvas');
       const w = imgEl.naturalWidth || imgEl.width || 600;
       const h = imgEl.naturalHeight || imgEl.height || 600;
-      const maxDim = 1024;
+      const maxDim = 768; // one Gemini image tile: faster upload and analysis
       const scale = Math.min(1, maxDim / Math.max(w, h));
       canvas.width = Math.round(w * scale);
       canvas.height = Math.round(h * scale);
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         const base64 = dataUrl.replace(/^data:image\/[a-z]+;base64,/, '').trim();
         if (base64 && base64.length > 100) {
           return { base64, mimeType: 'image/jpeg' };

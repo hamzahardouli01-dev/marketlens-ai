@@ -31,6 +31,7 @@ import {
 import type { AIProductAnalysis, BuyVerdict, UniversalListingContext } from '../types/ai';
 import type { ProPlan, UserSubscription } from '../types/subscription';
 import { DEMO_ANALYSIS } from '../services/mockData';
+import { buildStages, expectedDurationMs, progressSnapshot } from '../utils/appraisalProgress';
 import {
   getPreferences,
   savePreferences,
@@ -50,6 +51,8 @@ let currentSelectedPlan: ProPlan = 'annual';
 let isAutoAnalyzing = false;
 let activeDrawerTab: 'appraisal' | 'settings' = 'appraisal';
 let latestAnalysis: { analysis: AIProductAnalysis; context: UniversalListingContext; isDemo: boolean } | null = null;
+// True while an appraisal request is running, so reopening the drawer shows it instead of starting another.
+let appraisalInFlight = false;
 
 // ─── Initialization ──────────────────────────────────────────────────────────
 
@@ -458,13 +461,7 @@ async function harvestCardContext(card: HTMLAnchorElement): Promise<UniversalLis
 }
 
 async function openInpageModalForCard(card: HTMLAnchorElement): Promise<void> {
-  createModalBase();
-  try {
-    const context = await harvestCardContext(card);
-    await executeAppraisal(context);
-  } catch (err: any) {
-    showModalError(err?.message || String(err));
-  }
+  await runAppraisalWithProgress(() => harvestCardContext(card));
 }
 
 // ─── 4. In-Page Slide-out Modal & AI Appraisal ────────────────────────────────
@@ -481,6 +478,13 @@ export async function toggleInpageModal(): Promise<void> {
 export async function openInpageModal(): Promise<void> {
   activeDrawerTab = 'appraisal';
 
+  // An appraisal is still running from before the drawer was closed: just show it again.
+  const existingModal = document.getElementById(MODAL_ID);
+  if (appraisalInFlight && existingModal) {
+    existingModal.style.display = 'flex';
+    return;
+  }
+
   // 1. Check if we are currently on an actual individual listing page
   if (!isDetailPage()) {
     createModalBase(false); // Don't show loading orb
@@ -495,15 +499,11 @@ export async function openInpageModal(): Promise<void> {
     return;
   }
 
-  // 3. We ARE on an individual listing: Show loading orb and execute appraisal
-  createModalBase(true);
-  try {
+  // 3. We ARE on an individual listing: show live progress and execute appraisal
+  await runAppraisalWithProgress(async () => {
     await waitForListingElements(document, 1500);
-    const context: UniversalListingContext = await harvestUniversalListing();
-    await executeAppraisal(context);
-  } catch (err: any) {
-    showModalError(err?.message || String(err));
-  }
+    return harvestUniversalListing();
+  });
 }
 
 function renderNoListingGuide(): void {
@@ -621,14 +621,22 @@ function createModalBase(showLoading: boolean = true): void {
           ${
             showLoading
               ? `
-            <div class="ml-loading-box">
-              <div class="ml-orb-stage">
-                <div class="ml-orb-glow"></div>
-                <div class="ml-orb-spinner"></div>
-                <div class="ml-orb-core">✨</div>
+            <div class="ml-progress" id="ml-progress">
+              <div class="ml-progress-listing" hidden>
+                <img class="ml-progress-thumb" alt="" />
+                <div class="ml-progress-listing-text">
+                  <div class="ml-progress-listing-title"></div>
+                  <div class="ml-progress-listing-price"></div>
+                </div>
               </div>
-              <p class="ml-loading-title">Auditing this listing…</p>
-              <p class="ml-loading-sub">Gemini 3.8 Flash is checking price, condition and safety signals.</p>
+              <div class="ml-progress-head">
+                <span class="ml-progress-spinner"></span>
+                <span class="ml-progress-title">Reading the listing…</span>
+                <span class="ml-progress-time">0s</span>
+              </div>
+              <div class="ml-progress-track"><div class="ml-progress-fill"></div></div>
+              <ol class="ml-progress-steps"></ol>
+              <p class="ml-progress-hint"></p>
             </div>
           `
               : ''
@@ -911,15 +919,7 @@ function renderProActivatedSuccess(): void {
     </div>
   `;
 
-  const continueAppraisal = async () => {
-    createModalBase(true);
-    try {
-      const context = await harvestUniversalListing();
-      await executeAppraisal(context);
-    } catch (err: any) {
-      showModalError(err?.message || String(err));
-    }
-  };
+  const continueAppraisal = () => runAppraisalWithProgress(harvestUniversalListing);
 
   document.getElementById('ml-pro-continue-btn')?.addEventListener('click', continueAppraisal);
 
@@ -927,7 +927,113 @@ function renderProActivatedSuccess(): void {
   setTimeout(continueAppraisal, 1800);
 }
 
-async function executeAppraisal(context: UniversalListingContext): Promise<void> {
+// ─── Live Appraisal Progress ──────────────────────────────────────────────────
+
+interface ProgressHandle {
+  /** Called once the listing is read: shows it and starts the AI steps. */
+  setContext(context: UniversalListingContext): void;
+  /** Marks every step done, then resolves after a short beat. */
+  finish(): Promise<void>;
+  stop(): void;
+}
+
+function startProgress(): ProgressHandle {
+  const startedAt = Date.now();
+  let aiStartedAt: number | null = null;
+  let stages = buildStages(1);
+  let expectedMs = expectedDurationMs(1);
+  let renderedStepsKey = '';
+
+  const render = (activeIndex: number, percent: number, hint: string) => {
+    const root = document.getElementById('ml-progress');
+    if (!root) return; // drawer is showing another tab
+
+    const done = activeIndex >= stages.length;
+    root.querySelector<HTMLElement>('.ml-progress-fill')!.style.width = `${percent}%`;
+    root.querySelector('.ml-progress-time')!.textContent = `${Math.floor((Date.now() - startedAt) / 1000)}s`;
+    root.querySelector('.ml-progress-title')!.textContent = done ? 'Your report is ready' : `${stages[activeIndex].label}…`;
+    root.querySelector('.ml-progress-hint')!.textContent = done ? '' : hint;
+    root.classList.toggle('ml-progress-done', done);
+
+    // Rebuild the step list only when it changes, so CSS animations are not restarted every tick.
+    const stepsKey = `${activeIndex}|${stages.map((st) => st.label).join('|')}`;
+    if (stepsKey === renderedStepsKey) return;
+    renderedStepsKey = stepsKey;
+    const list = root.querySelector('.ml-progress-steps')!;
+    list.innerHTML = '';
+    stages.forEach((stage, i) => {
+      const state = i < activeIndex ? 'done' : i === activeIndex ? 'active' : 'pending';
+      const item = document.createElement('li');
+      item.className = `ml-pstep ml-pstep-${state}`;
+      const icon = document.createElement('span');
+      icon.className = 'ml-pstep-icon';
+      icon.textContent = state === 'done' ? '✓' : stage.icon;
+      const label = document.createElement('span');
+      label.className = 'ml-pstep-label';
+      label.textContent = stage.label;
+      item.append(icon, label);
+      list.appendChild(item);
+    });
+  };
+
+  const tick = () => {
+    const now = Date.now();
+    const snap = progressSnapshot(aiStartedAt === null ? null : now - aiStartedAt, expectedMs, now - startedAt);
+    render(snap.activeIndex, snap.percent, snap.hint);
+  };
+
+  tick();
+  const timer = window.setInterval(tick, 250);
+
+  return {
+    setContext(context) {
+      const photoCount = (context.imageBase64 ? 1 : 0) + (context.additionalImagesBase64?.length ?? 0);
+      stages = buildStages(photoCount);
+      expectedMs = expectedDurationMs(photoCount);
+      aiStartedAt = Date.now();
+
+      const preview = document.querySelector<HTMLElement>('#ml-progress .ml-progress-listing');
+      if (preview) {
+        const thumb = preview.querySelector<HTMLImageElement>('.ml-progress-thumb')!;
+        const thumbSrc = context.imageBase64
+          ? `data:${context.imageMimeType || 'image/jpeg'};base64,${context.imageBase64}`
+          : context.imageUrl;
+        if (thumbSrc) thumb.src = thumbSrc;
+        else thumb.remove();
+        preview.querySelector('.ml-progress-listing-title')!.textContent = context.title || 'This listing';
+        preview.querySelector('.ml-progress-listing-price')!.textContent = context.priceRaw || '';
+        preview.hidden = false;
+      }
+      tick();
+    },
+    async finish() {
+      window.clearInterval(timer);
+      render(stages.length, 100, '');
+      await new Promise((resolve) => setTimeout(resolve, 450));
+    },
+    stop() {
+      window.clearInterval(timer);
+    },
+  };
+}
+
+async function runAppraisalWithProgress(harvest: () => Promise<UniversalListingContext>): Promise<void> {
+  createModalBase(true);
+  const progress = startProgress();
+  appraisalInFlight = true;
+  try {
+    const context = await harvest();
+    progress.setContext(context);
+    await executeAppraisal(context, progress);
+  } catch (err: any) {
+    progress.stop();
+    showModalError(err?.message || String(err));
+  } finally {
+    appraisalInFlight = false;
+  }
+}
+
+async function executeAppraisal(context: UniversalListingContext, progress?: ProgressHandle): Promise<void> {
   // Sync with server first to make sure any recent Pro purchase or quota state is refreshed!
   try {
     currentUserSub = await syncSubscriptionWithServer();
@@ -936,6 +1042,7 @@ async function executeAppraisal(context: UniversalListingContext): Promise<void>
 
   const quota = await checkQuotaStatus();
   if (!quota.allowed) {
+    progress?.stop();
     renderInpagePaywall();
     return;
   }
@@ -945,11 +1052,13 @@ async function executeAppraisal(context: UniversalListingContext): Promise<void>
     await decrementFreeQuota();
     currentUserSub = await getUserSubscription();
     latestAnalysis = { analysis, context, isDemo: false };
+    await progress?.finish();
     if (activeDrawerTab === 'appraisal') {
       renderInpageResults(analysis, context, false);
     }
     updateDrawerProPill();
   } catch (err: any) {
+    progress?.stop();
     const msg = err?.message || String(err);
     if (msg.includes('QUOTA_EXHAUSTED')) {
       renderInpagePaywall();
@@ -2751,6 +2860,160 @@ function injectStyles(): void {
       margin: 0;
       max-width: 300px;
       line-height: 1.5;
+    }
+
+    /* ── Live Appraisal Progress ── */
+    #${MODAL_ID} .ml-progress {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 22px 4px 8px;
+      animation: ml-fade-up 0.35s ease both;
+    }
+    #${MODAL_ID} .ml-progress-listing {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 14px;
+      background: var(--ml-card);
+      border: 1px solid var(--ml-border);
+    }
+    #${MODAL_ID} .ml-progress-listing[hidden] { display: none; }
+    #${MODAL_ID} .ml-progress-thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--ml-border);
+    }
+    #${MODAL_ID} .ml-progress-listing-text { min-width: 0; }
+    #${MODAL_ID} .ml-progress-listing-title {
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--ml-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #${MODAL_ID} .ml-progress-listing-price {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ml-accent);
+      margin-top: 2px;
+    }
+    #${MODAL_ID} .ml-progress-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #${MODAL_ID} .ml-progress-spinner {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: 2px solid var(--ml-accent-soft);
+      border-top-color: var(--ml-accent);
+      animation: ml-spin 0.8s linear infinite;
+    }
+    #${MODAL_ID} .ml-progress-done .ml-progress-spinner {
+      animation: none;
+      border-color: var(--ml-green-strong);
+      background: var(--ml-green-strong);
+    }
+    #${MODAL_ID} .ml-progress-title {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 750;
+      letter-spacing: -0.01em;
+      color: var(--ml-text);
+    }
+    #${MODAL_ID} .ml-progress-time {
+      font-size: 12px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--ml-text-3);
+    }
+    #${MODAL_ID} .ml-progress-track {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--ml-border);
+      overflow: hidden;
+    }
+    #${MODAL_ID} .ml-progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--ml-accent), var(--ml-accent-hover, var(--ml-accent)));
+      transition: width 0.4s ease;
+    }
+    #${MODAL_ID} .ml-progress-done .ml-progress-fill { background: var(--ml-green-strong); }
+    #${MODAL_ID} .ml-progress-steps {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #${MODAL_ID} .ml-pstep {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 11px;
+      border-radius: 11px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ml-text-2);
+      border: 1px solid transparent;
+      transition: opacity 0.3s ease;
+    }
+    #${MODAL_ID} .ml-pstep-pending { opacity: 0.4; }
+    #${MODAL_ID} .ml-pstep-active {
+      color: var(--ml-text);
+      background: var(--ml-card);
+      border-color: var(--ml-accent);
+      box-shadow: 0 0 0 3px var(--ml-accent-soft);
+    }
+    #${MODAL_ID} .ml-pstep-icon {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      background: var(--ml-accent-soft);
+    }
+    #${MODAL_ID} .ml-pstep-done .ml-pstep-icon {
+      background: var(--ml-green-soft);
+      color: var(--ml-green-strong);
+      font-weight: 800;
+      animation: ml-check-pop 0.4s ease both;
+    }
+    #${MODAL_ID} .ml-pstep-active .ml-pstep-icon { position: relative; }
+    #${MODAL_ID} .ml-pstep-active .ml-pstep-icon::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 9px;
+      border: 2px solid transparent;
+      border-top-color: var(--ml-accent);
+      animation: ml-spin 1s linear infinite;
+    }
+    #${MODAL_ID} .ml-progress-hint {
+      margin: 0;
+      min-height: 32px;
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: var(--ml-text-3);
+      text-align: center;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #${MODAL_ID} .ml-progress-spinner,
+      #${MODAL_ID} .ml-pstep-active .ml-pstep-icon::after { animation: none; }
     }
 
     /* ── Demo Banner & Error Card ── */

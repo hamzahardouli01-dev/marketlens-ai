@@ -5,6 +5,7 @@
  */
 
 import 'dotenv/config';
+import { createHash } from 'node:crypto';
 import { harmonizeAnalysis } from './harmonizer.js';
 
 export interface UniversalListingContext {
@@ -165,12 +166,16 @@ export function extractJsonFromResponse(raw: string): any {
 // - GEMINI_MODEL:   optional, comma-separated (e.g. "gemini-2.5-flash,gemini-flash-latest").
 //                   When unset, the newest stable Flash model available to the key is
 //                   discovered automatically from Google's model list.
+// - GEMINI_THINKING: optional, "low" (default, fastest), "medium", "high", or "off" to let
+//                   the model decide. Less thinking is the biggest speed win for appraisals.
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const FALLBACK_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash'];
 const MODEL_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const STATUS_CACHE_TTL_MS = 60 * 1000;
-const REQUEST_TIMEOUT_MS = 45 * 1000;
+const LIST_TIMEOUT_MS = 15 * 1000;
+// Photo appraisals with Google Search grounding regularly take 45-90s.
+const GENERATE_TIMEOUT_MS = 150 * 1000;
 
 export type GeminiErrorCode = 'NOT_CONFIGURED' | 'INVALID_KEY' | 'RATE_LIMITED' | 'UNAVAILABLE';
 
@@ -256,7 +261,7 @@ export function pickFlashModels(
 async function listModels(apiKey: string, pageSize: number): Promise<Response> {
   return fetch(`${GEMINI_API_BASE}/models?pageSize=${pageSize}`, {
     headers: { 'x-goog-api-key': apiKey },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(LIST_TIMEOUT_MS),
   });
 }
 
@@ -342,21 +347,44 @@ export async function getGeminiStatus(): Promise<GeminiStatus> {
 
 // ─── Appraisal ────────────────────────────────────────────────────────────────
 
+// Models that rejected thinkingConfig; they are called without it from then on.
+const modelsWithoutThinking = new Set<string>();
+
+/** Gemini 3+ takes a thinking level, 2.5 a token budget; other models get nothing. */
+function thinkingConfigFor(model: string): Record<string, unknown> | null {
+  const level = (process.env.GEMINI_THINKING || 'low').trim().toLowerCase();
+  if (level === 'off' || modelsWithoutThinking.has(model)) return null;
+  const version = modelVersion(model);
+  if (version >= 3) return { thinkingLevel: level };
+  if (version >= 2.5) return { thinkingBudget: level === 'low' ? 1024 : level === 'medium' ? 4096 : -1 };
+  return null;
+}
+
 async function generateContent(
   model: string,
   apiKey: string,
-  payload: unknown
+  payload: { contents: unknown; tools?: unknown; generationConfig: Record<string, unknown> }
 ): Promise<{ text?: string; candidate?: any; error?: string }> {
+  const thinkingConfig = thinkingConfigFor(model);
+  const body = thinkingConfig
+    ? { ...payload, generationConfig: { ...payload.generationConfig, thinkingConfig } }
+    : payload;
+
   const res = await fetch(`${GEMINI_API_BASE}/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(GENERATE_TIMEOUT_MS),
   });
 
   if (!res.ok) {
     const { fatal, message } = await classifyGeminiError(res);
     if (fatal) throw fatal;
+    if (thinkingConfig && res.status === 400 && /thinking/i.test(message)) {
+      console.warn(`[Gemini] ${model} does not accept thinkingConfig; retrying without it.`);
+      modelsWithoutThinking.add(model);
+      return generateContent(model, apiKey, payload);
+    }
     return { error: `${model} (${res.status}): ${message}` };
   }
 
@@ -369,7 +397,43 @@ async function generateContent(
   return text ? { text, candidate } : { error: `${model}: empty response` };
 }
 
+// ─── Result Cache ─────────────────────────────────────────────────────────────
+// The same listing is often opened again (or by several buyers). Serving it from
+// memory makes repeat appraisals instant and saves Gemini quota.
+
+const RESULT_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const RESULT_CACHE_MAX = 300;
+const resultCache = new Map<string, { analysis: any; storedAt: number }>();
+
+function cacheKeyFor(context: UniversalListingContext): string {
+  const hash = createHash('sha256');
+  for (const part of [context.url, context.title, context.priceRaw, context.currency, context.description]) {
+    hash.update(`${part || ''}\u0000`);
+  }
+  hash.update(context.imageBase64 || '');
+  for (const img of context.additionalImagesBase64 || []) hash.update(img.base64 || '');
+  return hash.digest('hex');
+}
+
 export async function analyzeListingOnServer(context: UniversalListingContext): Promise<any> {
+  const key = cacheKeyFor(context);
+  const cached = resultCache.get(key);
+  if (cached && Date.now() - cached.storedAt < RESULT_CACHE_TTL_MS) {
+    console.log('[Gemini Cache] Served repeat appraisal from cache');
+    return { ...cached.analysis, imageUrl: context.imageUrl };
+  }
+
+  const analysis = await runGeminiAppraisal(context);
+
+  resultCache.delete(key);
+  resultCache.set(key, { analysis, storedAt: Date.now() });
+  if (resultCache.size > RESULT_CACHE_MAX) {
+    resultCache.delete(resultCache.keys().next().value as string);
+  }
+  return analysis;
+}
+
+async function runGeminiAppraisal(context: UniversalListingContext): Promise<any> {
   const apiKey = getApiKey();
   const { models: modelsToTry, source } = await resolveModels(apiKey);
   const promptText = buildSystemPrompt(context);
