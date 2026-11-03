@@ -160,7 +160,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           status: 0,
           error:
             err?.message ||
-            'Could not reach MarketLens backend server. Please verify the server is running on http://localhost:3001.',
+            'Could not reach the MarketLens server. Check your internet connection and try again.',
         });
       }
     })();

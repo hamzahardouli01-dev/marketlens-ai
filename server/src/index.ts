@@ -12,13 +12,27 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { canAppraise, recordAppraisal, getOrCreateUser } from './quota.js';
-import { analyzeListingOnServer, UniversalListingContext } from './gemini.js';
+import {
+  analyzeListingOnServer,
+  getGeminiStatus,
+  GeminiServiceError,
+  GeminiErrorCode,
+  UniversalListingContext,
+} from './gemini.js';
 import {
   createProCheckoutSession,
   createCustomerPortalSession,
   handleStripeWebhook,
   verifyUserStripeStatus,
 } from './stripe.js';
+
+// Shown to extension users; the detailed cause goes to the server logs.
+const AI_ERROR_MESSAGES: Record<GeminiErrorCode, string> = {
+  NOT_CONFIGURED: 'MarketLens AI is temporarily unavailable (server setup issue). Please try again later.',
+  INVALID_KEY: 'MarketLens AI is temporarily unavailable (server setup issue). Please try again later.',
+  RATE_LIMITED: 'MarketLens AI is busy right now. Please try again in a minute.',
+  UNAVAILABLE: 'The AI could not finish this appraisal. Please try again shortly.',
+};
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -72,6 +86,12 @@ app.get('/health', (_req: Request, res: Response) => {
     geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
     stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
   });
+});
+
+// ─── AI Health Check (verifies GEMINI_API_KEY and shows the active models) ───
+app.get('/health/ai', async (_req: Request, res: Response) => {
+  const status = await getGeminiStatus();
+  res.status(status.keyValid ? 200 : 503).json(status);
 });
 
 // ─── Hosted Privacy Policy for Chrome Web Store ───
@@ -240,6 +260,11 @@ app.post('/api/analyze', async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
+    if (err instanceof GeminiServiceError) {
+      console.error(`[Appraisal Error] ${err.code}: ${err.message}`);
+      res.status(503).json({ error: `AI_${err.code}`, message: AI_ERROR_MESSAGES[err.code] });
+      return;
+    }
     console.error('[Appraisal Error]:', err);
     res.status(500).json({
       error: 'ANALYSIS_FAILED',
@@ -306,6 +331,13 @@ app.post('/api/stripe/customer-portal', async (req: Request, res: Response) => {
 app.listen(PORT, () => {
   console.log(`⚡ MarketLens AI Server running on http://localhost:${PORT}`);
   console.log(`   - Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`   - Gemini API Key: ${process.env.GEMINI_API_KEY ? 'Configured ✅' : 'Missing ❌'}`);
   console.log(`   - Stripe Secret Key: ${process.env.STRIPE_SECRET_KEY ? 'Configured ✅' : 'Placeholder ⚠️'}`);
+
+  getGeminiStatus().then((status) => {
+    if (status.keyValid) {
+      console.log(`   - Gemini API Key: Valid ✅ (models from ${status.modelSource}: ${status.models.join(', ')})`);
+    } else {
+      console.log(`   - Gemini API Key: Not working ❌ ${status.error || ''}`);
+    }
+  });
 });

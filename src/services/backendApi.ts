@@ -104,7 +104,7 @@ async function sendBackendRequest<T = any>(
       status: 0,
       data: null as any,
       error:
-        'Could not connect to MarketLens backend server at http://localhost:3001. Please make sure the server is running ("cd server && npm run dev").',
+        'Could not reach the MarketLens server. Check your internet connection and try again.',
     };
   }
 }

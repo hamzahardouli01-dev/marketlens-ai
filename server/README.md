@@ -22,6 +22,16 @@ Fill in:
 - `STRIPE_SECRET_KEY`: Get test key from [Stripe Dashboard](https://dashboard.stripe.com/test/apikeys).
 - `STRIPE_WEBHOOK_SECRET`: (Optional for local testing) from `stripe listen --forward-to localhost:3001/api/stripe/webhook`.
 
+### Changing the Gemini key or model (no code change needed)
+The server reads these from its environment every time, so you only change them in your host's dashboard
+(Render: your service > **Environment** > edit > **Save Changes**; Render restarts the server automatically):
+- `GEMINI_API_KEY`: replace it with a new key. The extension does not need an update.
+- `GEMINI_MODEL` (optional): comma-separated model names tried in order, e.g. `gemini-2.5-flash,gemini-flash-latest`.
+  Leave it unset to auto-pick the newest stable Flash model your key can use.
+
+Then open `https://<your-server>/health/ai` to check. It shows whether the key works (`keyValid`) and which
+models will be used, without showing the key itself. The server logs the same check on startup.
+
 ### 3. Run Development Server
 ```bash
 npm run dev

@@ -154,18 +154,224 @@ export function extractJsonFromResponse(raw: string): any {
   return JSON.parse(text);
 }
 
-export async function analyzeListingOnServer(context: UniversalListingContext): Promise<any> {
+
+// ─── Gemini Configuration ─────────────────────────────────────────────────────
+//
+// Everything is read from environment variables at call time, so changing
+// GEMINI_API_KEY or GEMINI_MODEL in the Render dashboard takes effect on the
+// automatic restart, with no code change and no extension update.
+//
+// - GEMINI_API_KEY: required.
+// - GEMINI_MODEL:   optional, comma-separated (e.g. "gemini-2.5-flash,gemini-flash-latest").
+//                   When unset, the newest stable Flash model available to the key is
+//                   discovered automatically from Google's model list.
+
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const FALLBACK_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash'];
+const MODEL_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const STATUS_CACHE_TTL_MS = 60 * 1000;
+const REQUEST_TIMEOUT_MS = 45 * 1000;
+
+export type GeminiErrorCode = 'NOT_CONFIGURED' | 'INVALID_KEY' | 'RATE_LIMITED' | 'UNAVAILABLE';
+
+export class GeminiServiceError extends Error {
+  constructor(public code: GeminiErrorCode, message: string) {
+    super(message);
+    this.name = 'GeminiServiceError';
+  }
+}
+
+type ModelSource = 'env' | 'auto' | 'fallback';
+
+interface ResolvedModels {
+  models: string[];
+  source: ModelSource;
+}
+
+let modelCache: (ResolvedModels & { apiKey: string; fetchedAt: number }) | null = null;
+
+function getApiKey(): string {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
-    throw new Error('SERVER_CONFIG_ERROR: Backend GEMINI_API_KEY is not configured in server environment.');
+    throw new GeminiServiceError('NOT_CONFIGURED', 'GEMINI_API_KEY is not set in the server environment.');
+  }
+  return apiKey;
+}
+
+/**
+ * Reads a failed Gemini response. Returns a fatal error when retrying other
+ * models is pointless (bad key, quota), or null when the next model may work.
+ */
+async function classifyGeminiError(res: Response): Promise<{ fatal: GeminiServiceError | null; message: string }> {
+  const body = await res.text();
+  let message = body;
+  let details = '';
+  try {
+    const json = JSON.parse(body);
+    message = json.error?.message || body;
+    details = JSON.stringify(json.error?.details || '');
+  } catch {
+    // non-JSON body
   }
 
-  const modelsToTry = [
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-    'gemini-3.5-flash',
-    'gemini-2.5-flash',
-  ];
+  if (res.status === 401 || res.status === 403 || details.includes('API_KEY_INVALID')) {
+    return {
+      fatal: new GeminiServiceError('INVALID_KEY', `Gemini rejected GEMINI_API_KEY (${res.status}): ${message}`),
+      message,
+    };
+  }
+  if (res.status === 429) {
+    return {
+      fatal: new GeminiServiceError('RATE_LIMITED', `Gemini rate limit or quota reached: ${message}`),
+      message,
+    };
+  }
+  return { fatal: null, message };
+}
+
+function modelVersion(name: string): number {
+  const match = name.match(/^gemini-(\d+(?:\.\d+)?)/);
+  return match ? parseFloat(match[1]) : 0;
+}
+
+/** Picks general-purpose Flash models from Google's model list, newest stable first. */
+export function pickFlashModels(
+  models: Array<{ name?: string; supportedGenerationMethods?: string[] }>
+): string[] {
+  return models
+    .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+    .map((m) => (m.name || '').replace(/^models\//, ''))
+    .filter((name) => /^gemini-\d+(\.\d+)?-flash/.test(name))
+    .filter((name) => !/(lite|image|tts|audio|live|thinking|exp|computer)/.test(name))
+    .sort((a, b) => {
+      const previewDiff = Number(a.includes('preview')) - Number(b.includes('preview'));
+      if (previewDiff !== 0) return previewDiff;
+      const versionDiff = modelVersion(b) - modelVersion(a);
+      if (versionDiff !== 0) return versionDiff;
+      return a.length - b.length;
+    })
+    .slice(0, 3);
+}
+
+async function listModels(apiKey: string, pageSize: number): Promise<Response> {
+  return fetch(`${GEMINI_API_BASE}/models?pageSize=${pageSize}`, {
+    headers: { 'x-goog-api-key': apiKey },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+}
+
+export async function resolveModels(apiKey: string): Promise<ResolvedModels> {
+  const fromEnv = process.env.GEMINI_MODEL?.split(',').map((m) => m.trim()).filter(Boolean);
+  if (fromEnv?.length) {
+    return { models: fromEnv, source: 'env' };
+  }
+
+  if (modelCache && modelCache.apiKey === apiKey && Date.now() - modelCache.fetchedAt < MODEL_CACHE_TTL_MS) {
+    return { models: modelCache.models, source: modelCache.source };
+  }
+
+  try {
+    const res = await listModels(apiKey, 1000);
+    if (!res.ok) {
+      const { fatal, message } = await classifyGeminiError(res);
+      if (fatal) throw fatal;
+      console.warn('[Gemini Models] Model discovery failed:', message);
+    } else {
+      const data = await res.json();
+      const picked = pickFlashModels(data.models || []);
+      if (picked.length) {
+        const models = [...new Set([...picked, ...FALLBACK_MODELS])];
+        modelCache = { apiKey, models, source: 'auto', fetchedAt: Date.now() };
+        return { models, source: 'auto' };
+      }
+    }
+  } catch (err) {
+    if (err instanceof GeminiServiceError) throw err;
+    console.warn('[Gemini Models] Model discovery failed:', err instanceof Error ? err.message : String(err));
+  }
+
+  return { models: FALLBACK_MODELS, source: 'fallback' };
+}
+
+// ─── Status (for /health/ai and startup logs) ─────────────────────────────────
+
+export interface GeminiStatus {
+  configured: boolean;
+  keyValid: boolean;
+  models: string[];
+  modelSource: ModelSource | null;
+  error?: string;
+  checkedAt: number;
+}
+
+let statusCache: GeminiStatus | null = null;
+
+/** Verifies the key with a cheap model-list call. Never includes the key itself. */
+export async function getGeminiStatus(): Promise<GeminiStatus> {
+  if (statusCache && Date.now() - statusCache.checkedAt < STATUS_CACHE_TTL_MS) {
+    return statusCache;
+  }
+
+  const status: GeminiStatus = {
+    configured: Boolean(process.env.GEMINI_API_KEY?.trim()),
+    keyValid: false,
+    models: [],
+    modelSource: null,
+    checkedAt: Date.now(),
+  };
+
+  try {
+    const apiKey = getApiKey();
+    const res = await listModels(apiKey, 1);
+    if (!res.ok) {
+      const { fatal, message } = await classifyGeminiError(res);
+      status.error = fatal?.message || `Gemini model list failed (${res.status}): ${message}`;
+    } else {
+      status.keyValid = true;
+      const resolved = await resolveModels(apiKey);
+      status.models = resolved.models;
+      status.modelSource = resolved.source;
+    }
+  } catch (err) {
+    status.error = err instanceof Error ? err.message : String(err);
+  }
+
+  statusCache = status;
+  return status;
+}
+
+// ─── Appraisal ────────────────────────────────────────────────────────────────
+
+async function generateContent(
+  model: string,
+  apiKey: string,
+  payload: unknown
+): Promise<{ text?: string; candidate?: any; error?: string }> {
+  const res = await fetch(`${GEMINI_API_BASE}/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+
+  if (!res.ok) {
+    const { fatal, message } = await classifyGeminiError(res);
+    if (fatal) throw fatal;
+    return { error: `${model} (${res.status}): ${message}` };
+  }
+
+  const data = await res.json();
+  const candidate = data.candidates?.[0];
+  const text = (candidate?.content?.parts || [])
+    .map((p: { text?: string }) => p.text || '')
+    .join('')
+    .trim();
+  return text ? { text, candidate } : { error: `${model}: empty response` };
+}
+
+export async function analyzeListingOnServer(context: UniversalListingContext): Promise<any> {
+  const apiKey = getApiKey();
+  const { models: modelsToTry, source } = await resolveModels(apiKey);
   const promptText = buildSystemPrompt(context);
 
   const parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [
@@ -196,80 +402,49 @@ export async function analyzeListingOnServer(context: UniversalListingContext): 
     }
   }
 
+  // Google Search grounding cannot be combined with JSON mode, so each model gets
+  // a grounded attempt first and a plain JSON-mode attempt second.
+  const attempts = [
+    {
+      label: 'Gemini Grounding',
+      payload: { contents: [{ parts }], tools: [{ googleSearch: {} }], generationConfig: { temperature: 0.2 } },
+    },
+    {
+      label: 'Gemini Direct',
+      payload: { contents: [{ parts }], generationConfig: { temperature: 0.2, response_mime_type: 'application/json' } },
+    },
+  ];
+
   let lastError = '';
   let parsedJson: any = null;
 
   for (const model of modelsToTry) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-    // ── Attempt 1: Real-Time Web Search Grounding (Live Market Data) ──
-    try {
-      const searchPayload = {
-        contents: [{ parts }],
-        tools: [{ googleSearch: {} }],
-        generationConfig: {
-          temperature: 0.2,
-        },
-      };
-
-      const searchRes = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(searchPayload),
-      });
-
-      if (searchRes.ok) {
-        const searchData = await searchRes.json();
-        const candidate = searchData.candidates?.[0];
-        const rawText = candidate?.content?.parts?.[0]?.text;
-        if (rawText) {
-          parsedJson = extractJsonFromResponse(rawText);
-          console.log(`[Gemini Grounding] Successfully analyzed listing with Google Search tools via ${model}`);
-          if (candidate.groundingMetadata?.webSearchQueries) {
-            console.log('[Gemini Grounding] Live web queries executed:', candidate.groundingMetadata.webSearchQueries);
-          }
-          break;
+    for (const attempt of attempts) {
+      try {
+        const result = await generateContent(model, apiKey, attempt.payload);
+        if (!result.text) {
+          lastError = result.error || lastError;
+          continue;
         }
-      }
-    } catch (searchErr: any) {
-      console.warn(`[Gemini Grounding] Search tool attempt failed on ${model}:`, searchErr.message);
-    }
-
-    // ── Attempt 2: Structured JSON Mode (Direct Fallback) ──
-    try {
-      const fallbackPayload = {
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: 0.2,
-          response_mime_type: 'application/json',
-        },
-      };
-
-      const fallbackRes = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fallbackPayload),
-      });
-
-      if (fallbackRes.ok) {
-        const fallbackData = await fallbackRes.json();
-        const rawText = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (rawText) {
-          parsedJson = extractJsonFromResponse(rawText);
-          console.log(`[Gemini Direct] Successfully analyzed listing via direct JSON fallback on ${model}`);
-          break;
+        parsedJson = extractJsonFromResponse(result.text);
+        console.log(`[${attempt.label}] Analyzed listing via ${model} (models from ${source})`);
+        if (result.candidate?.groundingMetadata?.webSearchQueries) {
+          console.log('[Gemini Grounding] Live web queries executed:', result.candidate.groundingMetadata.webSearchQueries);
         }
-      } else {
-        const errText = await fallbackRes.text();
-        lastError = errText;
+        break;
+      } catch (err) {
+        // Bad key or quota: every other model would fail the same way.
+        if (err instanceof GeminiServiceError) throw err;
+        lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`;
+        console.warn(`[${attempt.label}] Attempt failed on ${model}:`, lastError);
       }
-    } catch (fallbackErr: any) {
-      lastError = fallbackErr.message || String(fallbackErr);
     }
+    if (parsedJson) break;
   }
 
   if (!parsedJson) {
-    throw new Error(`Gemini AI service unavailable: ${lastError || 'All models failed'}`);
+    modelCache = null; // rediscover models on the next request
+    throw new GeminiServiceError('UNAVAILABLE', `All Gemini models failed. Last error: ${lastError || 'unknown'}`);
   }
 
   parsedJson.analyzedAt = Date.now();
